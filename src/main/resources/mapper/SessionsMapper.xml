@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.SessionsMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.Sessions">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="token" column="token" jdbcType="VARCHAR"/>
+        <result property="ip" column="ip" jdbcType="VARCHAR"/>
+        <result property="device" column="device" jdbcType="VARCHAR"/>
+        <result property="loginAt" column="login_at" jdbcType="TIMESTAMP"/>
+        <result property="expiresAt" column="expires_at" jdbcType="TIMESTAMP"/>
+        <result property="revoked" column="revoked" jdbcType="TINYINT"/>
+        <result property="revokedAt" column="revoked_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,user_id,token,
+        ip,device,login_at,
+        expires_at,revoked,revoked_at
+    </sql>
+</mapper>

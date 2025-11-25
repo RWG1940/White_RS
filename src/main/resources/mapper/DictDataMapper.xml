@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.DictDataMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.DictData">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="typeCode" column="type_code" jdbcType="VARCHAR"/>
+        <result property="k" column="k" jdbcType="VARCHAR"/>
+        <result property="v" column="v" jdbcType="VARCHAR"/>
+        <result property="orderNum" column="order_num" jdbcType="INTEGER"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,type_code,k,
+        v,order_num,status,
+        created_at
+    </sql>
+</mapper>

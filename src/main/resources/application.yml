@@ -1,0 +1,20 @@
+spring:
+  profiles:
+    active: dev
+
+# MyBatis Plus配置（公共配置）
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# JWT配置
+jwt:
+  secret: 7pIHM2IsMd4HhS168A/Rk/19v8jbTfvBgJ6FkkIyYl+HPePrl0ahyNRyHDodnAgUY3v27UFov317MAMKTwueJA==
+  expiration: 604800000  # 7天（毫秒）
+

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.FilesMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.Files">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="originalName" column="original_name" jdbcType="VARCHAR"/>
+        <result property="storageKey" column="storage_key" jdbcType="VARCHAR"/>
+        <result property="size" column="size" jdbcType="BIGINT"/>
+        <result property="mimeType" column="mime_type" jdbcType="VARCHAR"/>
+        <result property="hash" column="hash" jdbcType="VARCHAR"/>
+        <result property="storage" column="storage" jdbcType="VARCHAR"/>
+        <result property="uploaderId" column="uploader_id" jdbcType="BIGINT"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,original_name,storage_key,
+        size,mime_type,hash,
+        storage,uploader_id,created_at
+    </sql>
+</mapper>
