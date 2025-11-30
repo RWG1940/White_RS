@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.OperationLogsMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.OperationLogs">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="action" column="action" jdbcType="VARCHAR"/>
+        <result property="targetTable" column="target_table" jdbcType="VARCHAR"/>
+        <result property="targetId" column="target_id" jdbcType="VARCHAR"/>
+        <result property="beforeState" column="before_state" jdbcType="OTHER"/>
+        <result property="afterState" column="after_state" jdbcType="OTHER"/>
+        <result property="ip" column="ip" jdbcType="VARCHAR"/>
+        <result property="userAgent" column="user_agent" jdbcType="VARCHAR"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,user_id,username,
+        action,target_table,target_id,
+        before_state,after_state,ip,
+        user_agent,created_at
+    </sql>
+</mapper>

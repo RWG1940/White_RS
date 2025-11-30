@@ -1,0 +1,28 @@
+##数据库
+#基本信息
+    数据库名称：white-rs
+    字符集：utf8mb4_general_ci
+    排序规则：utf8mb4 -- UTF-8 Unicode
+    数据库账户：root
+    数据库密码：194044
+    数据库版本：5.7.44
+#表信息
+    用户表：
+        非空字段：
+            id 自增主键
+            username 账号
+            password_hash 密码（哈希值）
+            status 账号状态：0禁用 1正常 2锁定
+            version 版本号（乐观锁）
+            created_at 创建时间
+            updated_at 更新时间
+        其他字段
+            email 邮箱
+            phone 手机号
+            last_login_at 上次登录时间
+            last_login_ip 上次登录ip
+            profile 扩展字段（json）
+            deleted_at 软删除时间
+
+
+
