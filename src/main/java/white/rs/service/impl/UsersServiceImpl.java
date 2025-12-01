@@ -1,8 +1,8 @@
 package white.rs.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+import white.rs.common.util.PasswordUtil;
 import white.rs.domain.Users;
 import white.rs.mapper.UsersMapper;
 import white.rs.service.UsersService;
@@ -35,5 +35,13 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         user.setLastLoginAt(new Date());
         user.setLastLoginIp(loginIp);
         updateById(user);
+    }
+
+    // 重新添加新用户
+    @Override
+    public boolean save(Users entity) {
+        // 添加初始加密的密码为1234
+        entity.setPasswordHash(PasswordUtil.encode("1234"));
+        return super.save(entity);
     }
 }

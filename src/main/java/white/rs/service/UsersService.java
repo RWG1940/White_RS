@@ -35,4 +35,5 @@ public interface UsersService extends IService<Users> {
      * @param loginIp 登录IP
      */
     void updateLoginInfo(Long userId, String loginIp);
+
 }

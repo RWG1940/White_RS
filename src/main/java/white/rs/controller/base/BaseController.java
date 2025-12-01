@@ -1,36 +1,27 @@
 package white.rs.controller.base;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import white.rs.common.response.ResponseCode;
 import white.rs.common.response.WhiteResponse;
-import white.rs.service.BaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * 基础控制器
- * 提供通用的CRUD接口，子类只需继承并注入对应的Service即可
- *
- * @param <T> 实体类型
- * @param <S> Service类型
+ * 通用基础控制器
+ * 子类只需继承 BaseController<T, S extends IService<T>>
  */
-public abstract class BaseController<T, S extends BaseService<T>> {
+public abstract class BaseController<T, S extends IService<T>> {
 
-    /**
-     * Service实例
-     * 子类继承后，Spring会自动注入对应的Service实现
-     * 使用required=false避免在抽象类中报错，实际运行时子类会正确注入
-     */
     @Autowired(required = false)
     protected S baseService;
 
-    /**
-     * 根据ID查询
-     * GET /{id}
-     */
+    // ========== CRUD 通用接口 ==========
+
     @GetMapping("/{id}")
     public WhiteResponse<T> getById(@PathVariable Long id) {
         T entity = baseService.getById(id);
@@ -40,210 +31,129 @@ public abstract class BaseController<T, S extends BaseService<T>> {
         return success(entity);
     }
 
-    /**
-     * 查询所有
-     * GET /list
-     */
     @GetMapping("/list")
     public WhiteResponse<List<T>> list() {
-        List<T> list = baseService.list();
-        return success(list);
+        return success(baseService.list());
     }
 
-    /**
-     * 分页查询
-     * GET /page?current=1&size=10
-     */
     @GetMapping("/page")
     public WhiteResponse<IPage<T>> page(
             @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size) {
+            @RequestParam(defaultValue = "10") Long size
+    ) {
         Page<T> page = new Page<>(current, size);
-        IPage<T> pageResult = baseService.page(page);
-        return success(pageResult);
+        return success(baseService.page(page));
     }
 
-    /**
-     * 新增
-     * POST /
-     */
     @PostMapping
     public WhiteResponse<T> save(@RequestBody T entity) {
         boolean result = baseService.save(entity);
-        if (result) {
-            return success("新增成功", entity);
-        }
-        return fail("新增失败");
+        return result ? success("新增成功", entity) : fail("新增失败");
     }
 
-    /**
-     * 批量新增
-     * POST /batch
-     */
     @PostMapping("/batch")
-    public WhiteResponse<Void> saveBatch(@RequestBody List<T> entityList) {
-        if (entityList == null || entityList.isEmpty()) {
+    public WhiteResponse<Void> saveBatch(@RequestBody List<T> list) {
+        if (list == null || list.isEmpty()) {
             return paramError("数据列表不能为空");
         }
-        boolean result = baseService.saveBatch(entityList);
-        if (result) {
-            return success("批量新增成功");
-        }
-        return fail("批量新增失败");
+        return baseService.saveBatch(list) ? success("批量新增成功") : fail("批量新增失败");
     }
 
-    /**
-     * 根据ID更新
-     * PUT /{id}
-     */
     @PutMapping("/{id}")
     public WhiteResponse<T> updateById(@PathVariable Long id, @RequestBody T entity) {
-        // 检查实体是否存在
-        T existingEntity = baseService.getById(id);
-        if (existingEntity == null) {
+        if (baseService.getById(id) == null) {
             return fail(ResponseCode.NOT_FOUND);
         }
-        boolean result = baseService.updateById(entity);
-        if (result) {
-            return success("更新成功", entity);
-        }
-        return fail("更新失败");
+        return baseService.updateById(entity)
+                ? success("更新成功", entity)
+                : fail("更新失败");
     }
 
-    /**
-     * 根据ID删除
-     * DELETE /{id}
-     */
     @DeleteMapping("/{id}")
-    public WhiteResponse<Void> removeById(@PathVariable Long id) {
-        T existingEntity = baseService.getById(id);
-        if (existingEntity == null) {
+    public WhiteResponse<Void> delete(@PathVariable Long id) {
+        if (baseService.getById(id) == null) {
             return fail(ResponseCode.NOT_FOUND);
         }
-        boolean result = baseService.removeById(id);
-        if (result) {
-            return success("删除成功");
-        }
-        return fail("删除失败");
+        return baseService.removeById(id)
+                ? success("删除成功")
+                : fail("删除失败");
     }
 
-    /**
-     * 批量删除
-     * DELETE /batch
-     */
     @DeleteMapping("/batch")
-    public WhiteResponse<Void> removeByIds(@RequestBody List<Long> idList) {
-        if (idList == null || idList.isEmpty()) {
+    public WhiteResponse<Void> deleteBatch(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
             return paramError("ID列表不能为空");
         }
-        boolean result = baseService.removeByIds(idList);
-        if (result) {
-            return success("批量删除成功");
-        }
-        return fail("批量删除失败");
+        return baseService.removeByIds(ids)
+                ? success("批量删除成功")
+                : fail("批量删除失败");
     }
 
-    /**
-     * 统计总数
-     * GET /count
-     */
     @GetMapping("/count")
     public WhiteResponse<Long> count() {
-        long count = baseService.count();
-        return success(count);
+        return success(baseService.count());
     }
 
-    // ========== 响应封装方法 ==========
+    // 模糊查询接口
+    @GetMapping("/search")
+    public WhiteResponse<List<T>> like(@RequestParam String column,
+                                       @RequestParam String keyword) {
 
-    /**
-     * 成功响应（无数据）
-     */
+        QueryWrapper<T> wrapper = new QueryWrapper<>();
+        wrapper.like(column, keyword);
+
+        List<T> list = baseService.list(wrapper);
+        return success(list);
+    }
+
+
+    // ========== 响应封装 ==========
+
     protected <R> WhiteResponse<R> success() {
         return WhiteResponse.success();
     }
 
-    /**
-     * 成功响应（带数据）
-     */
     protected <R> WhiteResponse<R> success(R data) {
         return WhiteResponse.success(data);
     }
 
-    /**
-     * 成功响应（自定义消息）
-     */
-    protected <R> WhiteResponse<R> success(String message, R data) {
-        return WhiteResponse.success(message, data);
+    protected <R> WhiteResponse<R> success(String msg, R data) {
+        return WhiteResponse.success(msg, data);
     }
 
-    /**
-     * 成功响应（仅消息，无数据，返回Void类型）
-     */
-    protected WhiteResponse<Void> success(String message) {
-        return WhiteResponse.success(message, null);
+    protected WhiteResponse<Void> success(String msg) {
+        return WhiteResponse.success(msg, null);
     }
 
-    /**
-     * 失败响应
-     */
     protected <R> WhiteResponse<R> fail() {
         return WhiteResponse.fail();
     }
 
-    /**
-     * 失败响应（自定义消息）
-     */
-    protected <R> WhiteResponse<R> fail(String message) {
-        return WhiteResponse.fail(message);
+    protected <R> WhiteResponse<R> fail(String msg) {
+        return WhiteResponse.fail(msg);
     }
 
-    /**
-     * 失败响应（仅消息，无数据，返回Void类型）
-     */
-    protected WhiteResponse<Void> failVoid(String message) {
-        return WhiteResponse.fail(message);
+    protected <R> WhiteResponse<R> fail(Integer code, String msg) {
+        return WhiteResponse.fail(code, msg);
     }
 
-    /**
-     * 失败响应（自定义码和消息）
-     */
-    protected <R> WhiteResponse<R> fail(Integer code, String message) {
-        return WhiteResponse.fail(code, message);
+    protected <R> WhiteResponse<R> fail(ResponseCode code) {
+        return WhiteResponse.fail(code);
     }
 
-    /**
-     * 失败响应（使用响应码枚举）
-     */
-    protected <R> WhiteResponse<R> fail(ResponseCode responseCode) {
-        return WhiteResponse.fail(responseCode);
+    protected <R> WhiteResponse<R> paramError(String msg) {
+        return WhiteResponse.fail(ResponseCode.PARAM_ERROR.getCode(), msg);
     }
 
-    /**
-     * 参数错误响应
-     */
-    protected <R> WhiteResponse<R> paramError(String message) {
-        return WhiteResponse.fail(ResponseCode.PARAM_ERROR.getCode(), message);
-    }
-
-    /**
-     * 未授权响应
-     */
     protected <R> WhiteResponse<R> unauthorized() {
         return WhiteResponse.fail(ResponseCode.UNAUTHORIZED);
     }
 
-    /**
-     * 禁止访问响应
-     */
     protected <R> WhiteResponse<R> forbidden() {
         return WhiteResponse.fail(ResponseCode.FORBIDDEN);
     }
 
-    /**
-     * 资源不存在响应
-     */
     protected <R> WhiteResponse<R> notFound() {
         return WhiteResponse.fail(ResponseCode.NOT_FOUND);
     }
 }
-
