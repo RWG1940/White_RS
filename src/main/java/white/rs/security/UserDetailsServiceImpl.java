@@ -43,7 +43,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         // 查询用户角色编码
         List<String> roleCodes = usersService.getRoleCodesByUserId(user.getId());
-
         // 构建权限列表（使用ROLE_前缀）
         List<GrantedAuthority> authorities = new ArrayList<>();
         for (String roleCode : roleCodes) {

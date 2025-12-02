@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import white.rs.common.response.ResponseCode;
 import white.rs.common.response.WhiteResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ public abstract class BaseController<T, S extends IService<T>> {
     // ========== CRUD 通用接口 ==========
 
     @GetMapping("/{id}")
+    @ApiOperation("查询单个")
     public WhiteResponse<T> getById(@PathVariable Long id) {
         T entity = baseService.getById(id);
         if (entity == null) {
@@ -32,11 +35,13 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     @GetMapping("/list")
+    @ApiOperation("查询列表")
     public WhiteResponse<List<T>> list() {
         return success(baseService.list());
     }
 
     @GetMapping("/page")
+    @ApiOperation("分页查询")
     public WhiteResponse<IPage<T>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size
@@ -46,12 +51,14 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     @PostMapping
+    @ApiOperation("新增")
     public WhiteResponse<T> save(@RequestBody T entity) {
         boolean result = baseService.save(entity);
         return result ? success("新增成功", entity) : fail("新增失败");
     }
 
     @PostMapping("/batch")
+    @ApiOperation("批量新增")
     public WhiteResponse<Void> saveBatch(@RequestBody List<T> list) {
         if (list == null || list.isEmpty()) {
             return paramError("数据列表不能为空");
@@ -60,6 +67,7 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     @PutMapping("/{id}")
+    @ApiOperation("更新")
     public WhiteResponse<T> updateById(@PathVariable Long id, @RequestBody T entity) {
         if (baseService.getById(id) == null) {
             return fail(ResponseCode.NOT_FOUND);
@@ -70,6 +78,7 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     @DeleteMapping("/{id}")
+    @ApiOperation("删除")
     public WhiteResponse<Void> delete(@PathVariable Long id) {
         if (baseService.getById(id) == null) {
             return fail(ResponseCode.NOT_FOUND);
@@ -80,6 +89,7 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     @DeleteMapping("/batch")
+    @ApiOperation("批量删除")
     public WhiteResponse<Void> deleteBatch(@RequestBody List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return paramError("ID列表不能为空");
@@ -90,13 +100,15 @@ public abstract class BaseController<T, S extends IService<T>> {
     }
 
     @GetMapping("/count")
+    @ApiOperation("统计数量")
     public WhiteResponse<Long> count() {
         return success(baseService.count());
     }
 
     // 模糊查询接口
     @GetMapping("/search")
-    public WhiteResponse<List<T>> like(@RequestParam String column,
+    @ApiOperation("模糊查询")
+    public WhiteResponse<List<T>> search(@RequestParam String column,
                                        @RequestParam String keyword) {
 
         QueryWrapper<T> wrapper = new QueryWrapper<>();

@@ -1,9 +1,20 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/white-rs?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://192.168.24.6:3306/white-rs?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: 194044
+  redis:
+    host: 192.168.24.6
+    port: 6379
+    password: 
+    database: 0
+    timeout: 5000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
 
 # MyBatis Plus开发环境配置
 mybatis-plus:
@@ -15,4 +26,5 @@ logging:
   level:
     white.rs: debug
     org.springframework.web: debug
+
 

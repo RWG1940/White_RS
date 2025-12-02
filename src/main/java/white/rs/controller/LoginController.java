@@ -1,5 +1,7 @@
 package white.rs.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -23,6 +25,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/auth")
+@Api(tags = "登录控制器")
 public class LoginController {
 
     @Autowired
@@ -39,6 +42,7 @@ public class LoginController {
      * POST /api/auth/login
      */
     @PostMapping("/login")
+    @ApiOperation("用户登录")
     public WhiteResponse<Map<String, Object>> login(@RequestBody Map<String, String> loginRequest, HttpServletRequest request) {
         String username = loginRequest.get("username");
         String password = loginRequest.get("password");
@@ -96,6 +100,7 @@ public class LoginController {
      * GET /api/auth/current
      */
     @GetMapping("/current")
+    @ApiOperation("获取当前用户信息")
     public WhiteResponse<Map<String, Object>> getCurrentUser() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -130,6 +135,7 @@ public class LoginController {
      * POST /api/auth/logout
      */
     @PostMapping("/logout")
+    @ApiOperation("用户登出")
     public WhiteResponse<Void> logout() {
         SecurityContextHolder.clearContext();
         return WhiteResponse.success("登出成功", null);
