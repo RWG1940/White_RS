@@ -17,4 +17,13 @@
         ,user_id,role_id,
         assigned_by,assigned_at
     </sql>
+
+    <!-- 批量插入用户角色关系 -->
+    <insert id="insertBatchSomeColumn">
+        INSERT INTO user_role (user_id, role_id, assigned_by, assigned_at)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.roleId}, #{item.assignedBy}, #{item.assignedAt})
+        </foreach>
+    </insert>
 </mapper>

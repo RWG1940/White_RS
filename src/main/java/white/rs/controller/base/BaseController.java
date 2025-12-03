@@ -26,7 +26,7 @@ public abstract class BaseController<T, S extends IService<T>> {
 
     @GetMapping("/{id}")
     @ApiOperation("查询单个")
-    public WhiteResponse<T> getById(@PathVariable Long id) {
+    public Object getById(@PathVariable Long id) {
         T entity = baseService.getById(id);
         if (entity == null) {
             return fail(ResponseCode.NOT_FOUND);
@@ -36,13 +36,13 @@ public abstract class BaseController<T, S extends IService<T>> {
 
     @GetMapping("/list")
     @ApiOperation("查询列表")
-    public WhiteResponse<List<T>> list() {
+    public Object list() {
         return success(baseService.list());
     }
 
     @GetMapping("/page")
     @ApiOperation("分页查询")
-    public WhiteResponse<IPage<T>> page(
+    public Object page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size
     ) {
@@ -101,14 +101,14 @@ public abstract class BaseController<T, S extends IService<T>> {
 
     @GetMapping("/count")
     @ApiOperation("统计数量")
-    public WhiteResponse<Long> count() {
+    public Object count() {
         return success(baseService.count());
     }
 
     // 模糊查询接口
     @GetMapping("/search")
     @ApiOperation("模糊查询")
-    public WhiteResponse<List<T>> search(@RequestParam String column,
+    public Object search(@RequestParam String column,
                                        @RequestParam String keyword) {
 
         QueryWrapper<T> wrapper = new QueryWrapper<>();

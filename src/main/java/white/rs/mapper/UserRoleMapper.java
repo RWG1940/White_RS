@@ -2,8 +2,10 @@ package white.rs.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import white.rs.domain.UserRole;
 
+import java.util.List;
 
 /**
  * @author Administrator
@@ -14,5 +16,11 @@ import white.rs.domain.UserRole;
 @Mapper
 public interface UserRoleMapper extends BaseMapper<UserRole> {
 
-
+    /**
+     * 批量插入用户角色关系
+     *
+     * @param userRoles 用户角色关系列表
+     * @return 插入的记录数
+     */
+    int insertBatchSomeColumn(@Param("list") List<UserRole> userRoles);
 }

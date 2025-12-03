@@ -1,4 +1,6 @@
-##数据库
+
+
+##mysql数据库
 #基本信息
     数据库名称：white-rs
     字符集：utf8mb4_general_ci
@@ -23,6 +25,9 @@
             last_login_ip 上次登录ip
             profile 扩展字段（json）
             deleted_at 软删除时间
+
+##redis数据库
+
 
 
 
