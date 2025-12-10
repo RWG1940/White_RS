@@ -1,6 +1,10 @@
 spring:
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 999MB
+      max-request-size: 999MB
 
 # MyBatis Plus配置（公共配置）
 mybatis-plus:

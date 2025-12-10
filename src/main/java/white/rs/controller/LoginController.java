@@ -124,6 +124,7 @@ public class LoginController {
             result.put("status", user.getStatus());
             result.put("roles", roleCodes);
 
+
             return WhiteResponse.success(result);
         } catch (Exception e) {
             return WhiteResponse.fail(500, "获取用户信息失败: " + e.getMessage());
