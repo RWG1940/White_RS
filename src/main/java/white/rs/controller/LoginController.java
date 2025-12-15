@@ -123,7 +123,7 @@ public class LoginController {
             result.put("phone", user.getPhone());
             result.put("status", user.getStatus());
             result.put("roles", roleCodes);
-
+            result.put("avatarUrl", user.getAvatarUrl());
 
             return WhiteResponse.success(result);
         } catch (Exception e) {

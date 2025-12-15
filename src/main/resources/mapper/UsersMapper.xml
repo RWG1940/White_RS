@@ -18,6 +18,7 @@
         <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
         <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
         <result property="deletedAt" column="deleted_at" jdbcType="TIMESTAMP"/>
+        <result property="avatarUrl" column="avatar_url" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -26,7 +27,7 @@
         phone,password_hash,status,
         last_login_at,last_login_ip,profile,
         version,created_at,updated_at,
-        deleted_at
+        deleted_at,avatar_url
     </sql>
 
     <!-- 根据用户名查询用户 -->
@@ -43,7 +44,8 @@
                u.version,
                u.created_at,
                u.updated_at,
-               u.deleted_at
+               u.deleted_at,
+               u.avatar_url
         FROM users u
         WHERE u.username = #{username}
     </select>

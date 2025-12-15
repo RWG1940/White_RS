@@ -9,8 +9,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import white.rs.common.response.WhiteResponse;
 import white.rs.controller.base.BaseController;
-import white.rs.domain.Users;
 import white.rs.domain.DTO.UserWithRolesDTO;
+import white.rs.domain.Users;
 import white.rs.service.UsersService;
 
 import java.util.List;
