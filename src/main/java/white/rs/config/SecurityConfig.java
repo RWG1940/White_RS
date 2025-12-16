@@ -75,7 +75,8 @@ public class SecurityConfig {
                         "/ws/**",  // WebSocket 连接路径（由 WebSocketAuthInterceptor 处理认证）
                         "/error",
                         "/api/files/**",  // 文件上传下载接口
-                        "/acc/importExcel"
+                        "/acc/importExcel",
+                        "/acc/exportExcel"
                 ).permitAll()
                 // 其他请求需要认证
                 .anyRequest().authenticated()
