@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.AccessoriesPurchaseContractMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.AccessoriesPurchaseContract">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="imageUrl" column="image_url" jdbcType="VARCHAR"/>
+            <result property="sku" column="sku" jdbcType="VARCHAR"/>
+            <result property="color" column="color" jdbcType="VARCHAR"/>
+            <result property="brand" column="brand" jdbcType="VARCHAR"/>
+            <result property="nameEn" column="name_en" jdbcType="VARCHAR"/>
+            <result property="materialMain" column="material_main" jdbcType="VARCHAR"/>
+            <result property="materialLining" column="material_lining" jdbcType="VARCHAR"/>
+            <result property="washLabelColor" column="wash_label_color" jdbcType="VARCHAR"/>
+            <result property="washLabelType" column="wash_label_type" jdbcType="VARCHAR"/>
+            <result property="factory" column="factory" jdbcType="VARCHAR"/>
+            <result property="address" column="address" jdbcType="VARCHAR"/>
+            <result property="follower" column="follower" jdbcType="VARCHAR"/>
+            <result property="quantity" column="quantity" jdbcType="INTEGER"/>
+            <result property="washUnitPrice" column="wash_unit_price" jdbcType="DECIMAL"/>
+            <result property="washTotalPrice" column="wash_total_price" jdbcType="DECIMAL"/>
+            <result property="tagUnitPrice" column="tag_unit_price" jdbcType="DECIMAL"/>
+            <result property="tagTotalPrice" column="tag_total_price" jdbcType="DECIMAL"/>
+            <result property="washPriority" column="wash_priority" jdbcType="INTEGER"/>
+            <result property="washStatus" column="wash_status" jdbcType="VARCHAR"/>
+            <result property="washConfirmTime" column="wash_confirm_time" jdbcType="TIMESTAMP"/>
+            <result property="washShipQuantity" column="wash_ship_quantity" jdbcType="INTEGER"/>
+            <result property="washShipTime" column="wash_ship_time" jdbcType="TIMESTAMP"/>
+            <result property="washExpressNo" column="wash_express_no" jdbcType="VARCHAR"/>
+            <result property="tagPriority" column="tag_priority" jdbcType="INTEGER"/>
+            <result property="tagStatus" column="tag_status" jdbcType="VARCHAR"/>
+            <result property="tagConfirmTime" column="tag_confirm_time" jdbcType="TIMESTAMP"/>
+            <result property="tagShipTime" column="tag_ship_time" jdbcType="TIMESTAMP"/>
+            <result property="tagShipQuantity" column="tag_ship_quantity" jdbcType="INTEGER"/>
+            <result property="tagExpressNo" column="tag_express_no" jdbcType="VARCHAR"/>
+            <result property="remark" column="remark" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="priority" column="priority" jdbcType="INTEGER"/>
+            <result property="importId" column="import_id" jdbcType="BIGINT"/>
+            <result property="quarter" column="quarter" jdbcType="VARCHAR"/>
+            <result property="scId" column="sc_id" jdbcType="VARCHAR"/>
+            <result property="extraJson" column="extra_json" jdbcType="OTHER"/>
+            <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+            <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,image_url,sku,
+        color,brand,name_en,
+        material_main,material_lining,wash_label_color,
+        wash_label_type,factory,address,
+        follower,quantity,wash_unit_price,
+        wash_total_price,tag_unit_price,tag_total_price,
+        wash_priority,wash_status,wash_confirm_time,
+        wash_ship_quantity,wash_ship_time,wash_express_no,
+        tag_priority,tag_status,tag_confirm_time,
+        tag_ship_time,tag_ship_quantity,tag_express_no,
+        remark,status,priority,
+        import_id,quarter,sc_id,extra_json,created_at,
+        updated_at
+    </sql>
+</mapper>
