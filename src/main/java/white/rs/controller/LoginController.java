@@ -1,5 +1,6 @@
 package white.rs.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import white.rs.common.response.WhiteResponse;
 import white.rs.common.util.JwtUtil;
+import white.rs.common.util.PasswordUtil;
 import white.rs.domain.Users;
 import white.rs.service.UsersService;
 
@@ -168,5 +170,41 @@ public class LoginController {
         }
         return ip;
     }
+
+    /**
+     * 修改密码·
+     *
+     */
+    @PostMapping("/change-password")
+    @ApiOperation("修改密码")
+    public WhiteResponse changePassword(
+            @RequestBody Map<String, String> req
+    ) {
+        String id = req.get("id");
+        String oldPassword = req.get("oldPassword");
+        String newPassword = req.get("newPassword");
+        String confirmPassword = req.get("confirmPassword");
+        // 验证新密码和确认密码是否一致
+        if (!newPassword.equals(confirmPassword)) {
+            return WhiteResponse.fail("两次密码不一致");
+        }
+        // 构建QueryWrapper
+        QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+        Users user = usersService.getOne(queryWrapper);
+        // 验证旧密码是否正确
+        if (!PasswordUtil.matches(oldPassword,user.getPasswordHash())) {
+            return WhiteResponse.fail("旧密码错误");
+        }
+        // 修改密码
+        user.setPasswordHash(PasswordUtil.encode(newPassword));
+
+        return usersService
+                .update(user, queryWrapper)
+                ? WhiteResponse.success("密码修改成功")
+                : WhiteResponse.fail("密码修改失败");
+
+    }
+
 }
 
