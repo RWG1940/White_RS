@@ -22,12 +22,17 @@ import white.rs.service.AccessoriesPurchaseContractService;
 import white.rs.mapper.AccessoriesPurchaseContractMapper;
 import org.springframework.stereotype.Service;
 import white.rs.service.TableImportService;
+import white.rs.service.UsersService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 
 
@@ -46,6 +51,9 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
     private FileResourceServiceImpl fileResourceService;
     @Autowired
     private TableImportService tableImportService;
+    
+    @Autowired
+    private UsersService usersService;
 
     // 添加辅助方法用于获取单元格值
     private String getCellValueAsString(Cell cell) {
@@ -161,6 +169,113 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
 
     }
 
+    /**
+     * 获取当前用户的ID
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String username = userDetails.getUsername();
+            
+            // 根据用户名获取用户ID
+            white.rs.domain.Users user = usersService.getByUsername(username);
+            if (user != null) {
+                return user.getId();
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * 获取当前用户的角色编码列表
+     */
+    private List<String> getCurrentUserRoles() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String username = userDetails.getUsername();
+            
+            // 根据用户名获取用户ID
+            white.rs.domain.Users user = usersService.getByUsername(username);
+            if (user != null) {
+                return usersService.getRoleCodesByUserId(user.getId());
+            }
+        }
+        return new ArrayList<>();
+    }
+    
+    /**
+     * 检查当前用户是否拥有指定角色
+     */
+    private boolean hasRole(String roleCode) {
+        List<String> roles = getCurrentUserRoles();
+        return roles.contains(roleCode);
+    }
+    
+    /**
+     * 根据用户角色获取允许导入的字段映射
+     */
+    private Set<String> getAllowedFieldsByRole() {
+        Set<String> allowedFields = new HashSet<>();
+        
+        // 检查当前用户角色
+        if (hasRole("3294") || hasRole("5293")) {
+            // 3294和5293角色可以导入所有字段
+            allowedFields.addAll(Arrays.asList(
+                "图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质",
+                "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", "洗标单价", 
+                "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态", 
+                "洗标确认时间", "洗标出货时间", "洗标快递单号", "吊牌优先级", 
+                "吊牌状态", "吊牌确认时间", "吊牌出货时间", "吊牌快递单号", 
+                "季度", "洗标实际出货数量", "吊牌实际出货数量", "备注"
+            ));
+        } else {
+            // 6666及其他角色只能导入特定字段，但必须包含用于识别记录的字段
+            allowedFields.addAll(Arrays.asList(
+                "货号", "颜色", "洗标单价", "吊牌单价", "洗标状态", "洗标实际出货数量", 
+                "洗标出货时间", "洗标快递单号", "吊牌状态", "吊牌出货时间", 
+                "吊牌实际出货数量", "吊牌快递单号", "备注"
+            ));
+        }
+        
+        return allowedFields;
+    }
+    
+    /**
+     * 根据用户角色获取导出字段列表
+     */
+    private List<String> getExportFieldsByRole() {
+        List<String> exportFields = new ArrayList<>();
+        
+        // 检查当前用户角色
+        // 如果用户拥有3294或5293角色，则可以导出所有字段
+        List<String> userRoles = getCurrentUserRoles();
+        System.out.println("当前用户角色列表: " + userRoles); // 调试信息
+        
+        if (userRoles.contains("3294") || userRoles.contains("5293")) {
+            // 3294和5293角色可以导出所有字段
+            exportFields.addAll(Arrays.asList(
+                "季度","图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质",
+                "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量","洗标实际出货数量" , "吊牌实际出货数量","洗标单价", 
+                "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态", "洗标确认时间", 
+                 "洗标出货时间", "洗标快递单号", "吊牌优先级", "吊牌状态", 
+                "吊牌确认时间", "吊牌出货时间", "吊牌快递单号"
+            ));
+        } else {
+            // 6666及其他角色只能导出特定字段，按指定顺序排列
+            exportFields.addAll(Arrays.asList(
+                "货号", "颜色", "品牌", "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", 
+                "洗标实际出货数量", "吊牌实际出货数量", "洗标单价", "洗标总价", "吊牌单价", "吊牌总价", 
+                "洗标优先级", "洗标状态", "洗标确认时间", "洗标出货时间", "洗标快递单号", 
+                "吊牌优先级", "吊牌状态", "吊牌确认时间", "吊牌出货时间", "吊牌快递单号", 
+                "英文品名", "大面材料", "里衬材质"
+            ));
+        }
+        
+        return exportFields;
+    }
+
     @Override
     public WhiteResponse importExcel(MultipartFile file,String importId) {
         try {
@@ -180,15 +295,23 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             Row headerRow = sheet.getRow(0);
             int lastCellNum = headerRow.getLastCellNum();
 
-            // 创建列名映射
+            // 获取当前用户允许导入的字段
+            Set<String> allowedFields = getAllowedFieldsByRole();
+            
+            // 创建列名映射，只包含允许的字段
             Map<String, Integer> fieldMap = new HashMap<>();
             for (int i = 0; i < lastCellNum; i++) {
                 Cell cell = headerRow.getCell(i);
                 if (cell != null) {
                     String headerName = cell.getStringCellValue().trim();
-                    fieldMap.put(headerName, i);
+                    // 只有在允许字段列表中的才添加到映射中
+                    if (allowedFields.contains(headerName)) {
+                        fieldMap.put(headerName, i);
+                    }
                 }
             }
+            
+            // 仅处理允许的字段，忽略没有权限的字段
 
             // 提取图片信息（仅支持.xlsx格式）
             Map<String, String> imageMap = new HashMap<>();
@@ -366,7 +489,8 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 if (fieldMap.containsKey("洗标状态")) {
                     Cell cell = row.getCell(fieldMap.get("洗标状态"));
                     if (cell != null) {
-                        contract.setWashStatus(getCellValueAsString(cell));
+                        String statusDesc = getCellValueAsString(cell);
+                        contract.setWashStatus(convertStatusToNumber(statusDesc));
                     }
                 }
 
@@ -424,7 +548,8 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 if (fieldMap.containsKey("吊牌状态")) {
                     Cell cell = row.getCell(fieldMap.get("吊牌状态"));
                     if (cell != null) {
-                        contract.setTagStatus(getCellValueAsString(cell));
+                        String statusDesc = getCellValueAsString(cell);
+                        contract.setTagStatus(convertStatusToNumber(statusDesc));
                     }
                 }
 
@@ -474,6 +599,13 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         contract.setQuarter(getCellValueAsString(cell));
                     }
                 }
+                
+                if (fieldMap.containsKey("备注")) {
+                    Cell cell = row.getCell(fieldMap.get("备注"));
+                    if (cell != null) {
+                        contract.setRemark(getCellValueAsString(cell));
+                    }
+                }
                 // 添加导入批次ID
                 contract.setImportId(Long.valueOf(importId));
                 list.add(contract);
@@ -506,11 +638,143 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         .one();
 
                 if (exist != null) {
-                    // ③ 已存在 → 执行更新（根据 sc_id 更新）
-                    this.lambdaUpdate()
-                            .eq(AccessoriesPurchaseContract::getScId, scId)
-                            .update(item);
-
+                    // ③ 已存在 → 执行更新（根据导入的字段更新，避免未导入字段被置为null）
+                    AccessoriesPurchaseContract updateItem = new AccessoriesPurchaseContract();
+                    boolean hasUpdate = false;
+                    
+                    // 只更新从Excel导入的字段，避免将未导入的字段设为null
+                    if (item.getSku() != null) {
+                        updateItem.setSku(item.getSku());
+                        hasUpdate = true;
+                    }
+                    if (item.getColor() != null) {
+                        updateItem.setColor(item.getColor());
+                        hasUpdate = true;
+                    }
+                    if (item.getBrand() != null) {
+                        updateItem.setBrand(item.getBrand());
+                        hasUpdate = true;
+                    }
+                    if (item.getNameEn() != null) {
+                        updateItem.setNameEn(item.getNameEn());
+                        hasUpdate = true;
+                    }
+                    if (item.getMaterialMain() != null) {
+                        updateItem.setMaterialMain(item.getMaterialMain());
+                        hasUpdate = true;
+                    }
+                    if (item.getMaterialLining() != null) {
+                        updateItem.setMaterialLining(item.getMaterialLining());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashLabelColor() != null) {
+                        updateItem.setWashLabelColor(item.getWashLabelColor());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashLabelType() != null) {
+                        updateItem.setWashLabelType(item.getWashLabelType());
+                        hasUpdate = true;
+                    }
+                    if (item.getFactory() != null) {
+                        updateItem.setFactory(item.getFactory());
+                        hasUpdate = true;
+                    }
+                    if (item.getAddress() != null) {
+                        updateItem.setAddress(item.getAddress());
+                        hasUpdate = true;
+                    }
+                    if (item.getFollower() != null) {
+                        updateItem.setFollower(item.getFollower());
+                        hasUpdate = true;
+                    }
+                    if (item.getQuantity() != null) {
+                        updateItem.setQuantity(item.getQuantity());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashUnitPrice() != null) {
+                        updateItem.setWashUnitPrice(item.getWashUnitPrice());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashTotalPrice() != null) {
+                        updateItem.setWashTotalPrice(item.getWashTotalPrice());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagUnitPrice() != null) {
+                        updateItem.setTagUnitPrice(item.getTagUnitPrice());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagTotalPrice() != null) {
+                        updateItem.setTagTotalPrice(item.getTagTotalPrice());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashPriority() != null) {
+                        updateItem.setWashPriority(item.getWashPriority());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashStatus() != null) {
+                        updateItem.setWashStatus(item.getWashStatus());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashConfirmTime() != null) {
+                        updateItem.setWashConfirmTime(item.getWashConfirmTime());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashShipTime() != null) {
+                        updateItem.setWashShipTime(item.getWashShipTime());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashShipQuantity() != null) {
+                        updateItem.setWashShipQuantity(item.getWashShipQuantity());
+                        hasUpdate = true;
+                    }
+                    if (item.getWashExpressNo() != null) {
+                        updateItem.setWashExpressNo(item.getWashExpressNo());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagPriority() != null) {
+                        updateItem.setTagPriority(item.getTagPriority());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagStatus() != null) {
+                        updateItem.setTagStatus(item.getTagStatus());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagConfirmTime() != null) {
+                        updateItem.setTagConfirmTime(item.getTagConfirmTime());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagShipTime() != null) {
+                        updateItem.setTagShipTime(item.getTagShipTime());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagShipQuantity() != null) {
+                        updateItem.setTagShipQuantity(item.getTagShipQuantity());
+                        hasUpdate = true;
+                    }
+                    if (item.getTagExpressNo() != null) {
+                        updateItem.setTagExpressNo(item.getTagExpressNo());
+                        hasUpdate = true;
+                    }
+                    if (item.getQuarter() != null) {
+                        updateItem.setQuarter(item.getQuarter());
+                        hasUpdate = true;
+                    }
+                    if (item.getImageUrl() != null) {
+                        updateItem.setImageUrl(item.getImageUrl());
+                        hasUpdate = true;
+                    }
+                    if (item.getRemark() != null) {
+                        updateItem.setRemark(item.getRemark());
+                        hasUpdate = true;
+                    }
+                    
+                    // 只有当存在要更新的字段时才执行更新
+                    if (hasUpdate) {
+                        updateItem.setScId(scId); // 确保scId一致
+                        this.lambdaUpdate()
+                                .eq(AccessoriesPurchaseContract::getScId, scId)
+                                .update(updateItem);
+                    }
                 } else {
                     // ④ 不存在 → 新增
                     this.save(item);
@@ -539,20 +803,16 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             headerStyle.setFont(headerFont);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
             
+            // 根据用户角色获取导出字段配置
+            List<String> exportFields = getExportFieldsByRole();
+            
             // 创建表头行
             Row headerRow = sheet.createRow(0);
-            String[] headers = {
-                "图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质", 
-                "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", "洗标单价", 
-                "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态", "洗标确认时间", 
-                "洗标实际出货数量", "洗标出货时间", "洗标快递单号", "吊牌优先级", "吊牌状态", 
-                "吊牌确认时间", "吊牌出货时间", "吊牌实际出货数量", "吊牌快递单号", "季度"
-            };
             
             // 填充表头
-            for (int i = 0; i < headers.length; i++) {
+            for (int i = 0; i < exportFields.size(); i++) {
                 Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
+                cell.setCellValue(exportFields.get(i));
                 cell.setCellStyle(headerStyle);
             }
             
@@ -562,92 +822,173 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 for (AccessoriesPurchaseContract contract : contractList) {
                     Row row = sheet.createRow(rowNum++);
                     
-                    // 处理图片列，如果存在图片则插入图片，否则保留URL文本
-                    String imageUrl = contract.getImageUrl();
-                    if (imageUrl != null && !imageUrl.isEmpty()) {
-                        // 检查是否为API地址
-                        if (imageUrl.startsWith("/api/files/download/")) {
-                            // 从API地址中提取文件key
-                            String fileKey = extractFileKeyFromUrl(imageUrl);
-                            System.out.println("提取的fileKey: " + fileKey + ", imageUrl: " + imageUrl);
-                            if (fileKey != null) {
-                                // 尝试获取图片数据
-                                byte[] imageData = getImageDataFromFileKey(fileKey);
-                                if (imageData != null && imageData.length > 0) {
-                                    // 插入图片到单元格
-                                    insertImageToCell(workbook, sheet, row, 0, imageData);
+                    // 根据角色权限导出指定字段
+                    for (int i = 0; i < exportFields.size(); i++) {
+                        String field = exportFields.get(i);
+                        Cell cell = row.createCell(i);
+                        
+                        switch (field) {
+                            case "图片":
+                                // 处理图片列，如果存在图片则插入图片，否则保留URL文本
+                                String imageUrl = contract.getImageUrl();
+                                if (imageUrl != null && !imageUrl.isEmpty()) {
+                                    // 检查是否为API地址
+                                    if (imageUrl.startsWith("/api/files/download/")) {
+                                        // 从API地址中提取文件key
+                                        String fileKey = extractFileKeyFromUrl(imageUrl);
+                                        System.out.println("提取的fileKey: " + fileKey + ", imageUrl: " + imageUrl);
+                                        if (fileKey != null) {
+                                            // 尝试获取图片数据
+                                            byte[] imageData = getImageDataFromFileKey(fileKey);
+                                            if (imageData != null && imageData.length > 0) {
+                                                // 插入图片到单元格
+                                                insertImageToCell(workbook, sheet, row, i, imageData);
+                                            } else {
+                                                // 如果无法获取图片数据，则保留URL文本
+                                                System.err.println("无法获取图片数据，fileKey: " + fileKey);
+                                                cell.setCellValue(imageUrl);
+                                            }
+                                        } else {
+                                            // 无法提取文件key，则保留URL文本
+                                            System.err.println("无法提取文件key，imageUrl: " + imageUrl);
+                                            cell.setCellValue(imageUrl);
+                                        }
+                                    } else {
+                                        // 不是API地址，保留URL文本
+                                        System.out.println("不是API地址，保留原始URL: " + imageUrl);
+                                        cell.setCellValue(imageUrl);
+                                    }
                                 } else {
-                                    // 如果无法获取图片数据，则保留URL文本
-                                    System.err.println("无法获取图片数据，fileKey: " + fileKey);
-                                    row.createCell(0).setCellValue(imageUrl);
+                                    // 没有图片URL，创建空单元格
+                                    cell.setCellValue("");
                                 }
-                            } else {
-                                // 无法提取文件key，则保留URL文本
-                                System.err.println("无法提取文件key，imageUrl: " + imageUrl);
-                                row.createCell(0).setCellValue(imageUrl);
-                            }
-                        } else {
-                            // 不是API地址，保留URL文本
-                            System.out.println("不是API地址，保留原始URL: " + imageUrl);
-                            row.createCell(0).setCellValue(imageUrl);
+                                break;
+                            case "货号":
+                                cell.setCellValue(contract.getSku() != null ? contract.getSku() : "");
+                                break;
+                            case "颜色":
+                                cell.setCellValue(contract.getColor() != null ? contract.getColor() : "");
+                                break;
+                            case "品牌":
+                                cell.setCellValue(contract.getBrand() != null ? contract.getBrand() : "");
+                                break;
+                            case "洗标颜色":
+                                cell.setCellValue(contract.getWashLabelColor() != null ? contract.getWashLabelColor() : "");
+                                break;
+                            case "洗标种类":
+                                cell.setCellValue(contract.getWashLabelType() != null ? contract.getWashLabelType() : "");
+                                break;
+                            case "工厂":
+                                cell.setCellValue(contract.getFactory() != null ? contract.getFactory() : "");
+                                break;
+                            case "地址":
+                                cell.setCellValue(contract.getAddress() != null ? contract.getAddress() : "");
+                                break;
+                            case "跟单":
+                                cell.setCellValue(contract.getFollower() != null ? contract.getFollower() : "");
+                                break;
+                            case "数量":
+                                cell.setCellValue(contract.getQuantity() != null ? contract.getQuantity() : 0);
+                                break;
+                            case "洗标实际出货数量":
+                                cell.setCellValue(contract.getWashShipQuantity() != null ? contract.getWashShipQuantity() : 0);
+                                break;
+                            case "吊牌实际出货数量":
+                                cell.setCellValue(contract.getTagShipQuantity() != null ? contract.getTagShipQuantity() : 0);
+                                break;
+                            case "洗标单价":
+                                cell.setCellValue(contract.getWashUnitPrice() != null ? contract.getWashUnitPrice().doubleValue() : 0.0);
+                                break;
+                            case "洗标总价":
+                                cell.setCellValue(contract.getWashTotalPrice() != null ? contract.getWashTotalPrice().doubleValue() : 0.0);
+                                break;
+                            case "吊牌单价":
+                                cell.setCellValue(contract.getTagUnitPrice() != null ? contract.getTagUnitPrice().doubleValue() : 0.0);
+                                break;
+                            case "吊牌总价":
+                                cell.setCellValue(contract.getTagTotalPrice() != null ? contract.getTagTotalPrice().doubleValue() : 0.0);
+                                break;
+                            case "洗标优先级":
+                                cell.setCellValue(contract.getWashPriority() != null ? contract.getWashPriority() : 0);
+                                break;
+                            case "洗标状态":
+                                cell.setCellValue(getStatusDescription(contract.getWashStatus()));
+                                break;
+                            case "洗标确认时间":
+                                if (contract.getWashConfirmTime() != null) {
+                                    CellStyle dateCellStyle = workbook.createCellStyle();
+                                    CreationHelper createHelper = workbook.getCreationHelper();
+                                    dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+                                    cell.setCellValue(contract.getWashConfirmTime());
+                                    cell.setCellStyle(dateCellStyle);
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                break;
+                            case "洗标出货时间":
+                                if (contract.getWashShipTime() != null) {
+                                    CellStyle dateCellStyle = workbook.createCellStyle();
+                                    CreationHelper createHelper = workbook.getCreationHelper();
+                                    dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+                                    cell.setCellValue(contract.getWashShipTime());
+                                    cell.setCellStyle(dateCellStyle);
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                break;
+                            case "洗标快递单号":
+                                cell.setCellValue(contract.getWashExpressNo() != null ? contract.getWashExpressNo() : "");
+                                break;
+                            case "吊牌优先级":
+                                cell.setCellValue(contract.getTagPriority() != null ? contract.getTagPriority() : 0);
+                                break;
+                            case "吊牌状态":
+                                cell.setCellValue(getStatusDescription(contract.getTagStatus()));
+                                break;
+                            case "吊牌确认时间":
+                                if (contract.getTagConfirmTime() != null) {
+                                    CellStyle dateCellStyle = workbook.createCellStyle();
+                                    CreationHelper createHelper = workbook.getCreationHelper();
+                                    dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+                                    cell.setCellValue(contract.getTagConfirmTime());
+                                    cell.setCellStyle(dateCellStyle);
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                break;
+                            case "吊牌出货时间":
+                                if (contract.getTagShipTime() != null) {
+                                    CellStyle dateCellStyle = workbook.createCellStyle();
+                                    CreationHelper createHelper = workbook.getCreationHelper();
+                                    dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-mm-dd"));
+                                    cell.setCellValue(contract.getTagShipTime());
+                                    cell.setCellStyle(dateCellStyle);
+                                } else {
+                                    cell.setCellValue("");
+                                }
+                                break;
+                            case "吊牌快递单号":
+                                cell.setCellValue(contract.getTagExpressNo() != null ? contract.getTagExpressNo() : "");
+                                break;
+                            case "英文品名":
+                                cell.setCellValue(contract.getNameEn() != null ? contract.getNameEn() : "");
+                                break;
+                            case "大面材料":
+                                cell.setCellValue(contract.getMaterialMain() != null ? contract.getMaterialMain() : "");
+                                break;
+                            case "里衬材质":
+                                cell.setCellValue(contract.getMaterialLining() != null ? contract.getMaterialLining() : "");
+                                break;
+                            default:
+                                cell.setCellValue("");
+                                break;
                         }
-                    } else {
-                        // 没有图片URL，创建空单元格
-                        row.createCell(0).setCellValue("");
                     }
-                    
-                    // 填充其他字段
-                    row.createCell(1).setCellValue(contract.getSku() != null ? contract.getSku() : "");
-                    row.createCell(2).setCellValue(contract.getColor() != null ? contract.getColor() : "");
-                    row.createCell(3).setCellValue(contract.getBrand() != null ? contract.getBrand() : "");
-                    row.createCell(4).setCellValue(contract.getNameEn() != null ? contract.getNameEn() : "");
-                    row.createCell(5).setCellValue(contract.getMaterialMain() != null ? contract.getMaterialMain() : "");
-                    row.createCell(6).setCellValue(contract.getMaterialLining() != null ? contract.getMaterialLining() : "");
-                    row.createCell(7).setCellValue(contract.getWashLabelColor() != null ? contract.getWashLabelColor() : "");
-                    row.createCell(8).setCellValue(contract.getWashLabelType() != null ? contract.getWashLabelType() : "");
-                    row.createCell(9).setCellValue(contract.getFactory() != null ? contract.getFactory() : "");
-                    row.createCell(10).setCellValue(contract.getAddress() != null ? contract.getAddress() : "");
-                    row.createCell(11).setCellValue(contract.getFollower() != null ? contract.getFollower() : "");
-                    row.createCell(12).setCellValue(contract.getQuantity() != null ? contract.getQuantity() : 0);
-                    row.createCell(13).setCellValue(contract.getWashUnitPrice() != null ? contract.getWashUnitPrice().doubleValue() : 0.0);
-                    row.createCell(14).setCellValue(contract.getWashTotalPrice() != null ? contract.getWashTotalPrice().doubleValue() : 0.0);
-                    row.createCell(15).setCellValue(contract.getTagUnitPrice() != null ? contract.getTagUnitPrice().doubleValue() : 0.0);
-                    row.createCell(16).setCellValue(contract.getTagTotalPrice() != null ? contract.getTagTotalPrice().doubleValue() : 0.0);
-                    row.createCell(17).setCellValue(contract.getWashPriority() != null ? contract.getWashPriority() : 0);
-                    row.createCell(18).setCellValue(contract.getWashStatus() != null ? contract.getWashStatus() : "");
-                    // 对于日期类型，需要特殊处理
-                    if (contract.getWashConfirmTime() != null) {
-                        row.createCell(19).setCellValue(contract.getWashConfirmTime());
-                    } else {
-                        row.createCell(19).setCellValue("");
-                    }
-                    row.createCell(20).setCellValue(contract.getWashShipQuantity() != null ? contract.getWashShipQuantity() : 0);
-                    if (contract.getWashShipTime() != null) {
-                        row.createCell(21).setCellValue(contract.getWashShipTime());
-                    } else {
-                        row.createCell(21).setCellValue("");
-                    }
-                    row.createCell(22).setCellValue(contract.getWashExpressNo() != null ? contract.getWashExpressNo() : "");
-                    row.createCell(23).setCellValue(contract.getTagPriority() != null ? contract.getTagPriority() : 0);
-                    row.createCell(24).setCellValue(contract.getTagStatus() != null ? contract.getTagStatus() : "");
-                    if (contract.getTagConfirmTime() != null) {
-                        row.createCell(25).setCellValue(contract.getTagConfirmTime());
-                    } else {
-                        row.createCell(25).setCellValue("");
-                    }
-                    if (contract.getTagShipTime() != null) {
-                        row.createCell(26).setCellValue(contract.getTagShipTime());
-                    } else {
-                        row.createCell(26).setCellValue("");
-                    }
-                    row.createCell(27).setCellValue(contract.getTagShipQuantity() != null ? contract.getTagShipQuantity() : 0);
-                    row.createCell(28).setCellValue(contract.getTagExpressNo() != null ? contract.getTagExpressNo() : "");
-                    row.createCell(29).setCellValue(contract.getQuarter() != null ? contract.getQuarter() : "");
                 }
             }
             
             // 自动调整列宽
-            for (int i = 0; i < headers.length; i++) {
+            for (int i = 0; i < exportFields.size(); i++) {
                 sheet.autoSizeColumn(i);
             }
             
@@ -971,6 +1312,74 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
         public void transferTo(File dest) throws IOException, IllegalStateException {
             try (FileOutputStream fos = new FileOutputStream(dest)) {
                 fos.write(content);
+            }
+        }
+    }
+    
+    /**
+     * 将状态数字转换为中文描述
+     * 0-未下单, 1-做货中, 2-货好等付款, 3-已出货
+     *
+     * @param status 状态数字
+     * @return 状态中文描述
+     */
+    private String getStatusDescription(String status) {
+        if (status == null || status.isEmpty()) {
+            return "";
+        }
+        
+        try {
+            int statusValue = Integer.parseInt(status);
+            switch (statusValue) {
+                case 0:
+                    return "未下单";
+                case 1:
+                    return "做货中";
+                case 2:
+                    return "货好等付款";
+                case 3:
+                    return "已出货";
+                default:
+                    return status; // 如果不是0-3的值，返回原值
+            }
+        } catch (NumberFormatException e) {
+            // 如果状态不是数字，返回原值
+            return status;
+        }
+    }
+    
+    /**
+     * 将状态中文描述转换为数字
+     * 未下单→0, 做货中→1, 货好等付款→2, 已出货→3
+     *
+     * @param statusDesc 状态中文描述
+     * @return 状态数字
+     */
+    private String convertStatusToNumber(String statusDesc) {
+        if (statusDesc == null || statusDesc.isEmpty()) {
+            return statusDesc;
+        }
+        
+        String cleanedDesc = statusDesc.trim();
+        
+        // 检查各种可能的状态描述，使用包含匹配以处理可能的空格或特殊字符
+        if (cleanedDesc.contains("未下单")) {
+            return "0";
+        } else if (cleanedDesc.contains("做货中")) {
+            return "1";
+        } else if (cleanedDesc.contains("货好等付款")) {
+            return "2";
+        } else if (cleanedDesc.contains("已出货")) {
+            return "3";
+        } else {
+            // 检查是否已经是数字
+            try {
+                Integer.parseInt(cleanedDesc);
+                return cleanedDesc; // 如果已经是数字，直接返回
+            } catch (NumberFormatException e) {
+                // 如果不是预定义的中文状态，也不是数字，返回原值
+                System.out.println("状态转换失败: " + statusDesc + " -> 保持原值");
+                return statusDesc;
             }
         }
     }
