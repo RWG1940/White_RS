@@ -1,5 +1,6 @@
 spring:
   profiles:
+    # 开发环境dev 生产环境prod
     active: dev
   servlet:
     multipart:
@@ -17,8 +18,7 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# JWT配置
+# JWT配置 生成密钥函数见JwtAuthenticationFilter
 jwt:
   secret: 7pIHM2IsMd4HhS168A/Rk/19v8jbTfvBgJ6FkkIyYl+HPePrl0ahyNRyHDodnAgUY3v27UFov317MAMKTwueJA==
-  expiration: 604800000  # 7天（毫秒）
-
+  expiration: 604800000

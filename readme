@@ -1,32 +1,102 @@
 
-
 ##mysql数据库
-#基本信息
+# 基本信息
     数据库名称：white-rs
-    字符集：utf8mb4_general_ci
-    排序规则：utf8mb4 -- UTF-8 Unicode
+    字符集：utf8mb4_ai_ci
+    排序规则：utf8mb4
     数据库账户：root
     数据库密码：194044
-    数据库版本：5.7.44
-#表信息
-    用户表：
-        非空字段：
-            id 自增主键
-            username 账号
-            password_hash 密码（哈希值）
-            status 账号状态：0禁用 1正常 2锁定
-            version 版本号（乐观锁）
-            created_at 创建时间
-            updated_at 更新时间
-        其他字段
-            email 邮箱
-            phone 手机号
-            last_login_at 上次登录时间
-            last_login_ip 上次登录ip
-            profile 扩展字段（json）
-            deleted_at 软删除时间
+    数据库版本：8.0
+# 容器安装
+    docker run -d \
+      --name mysql8 \
+      -e MYSQL_ROOT_PASSWORD=194044 \
+      -p 3306:3306 \
+      -v /data/mysql-data:/var/lib/mysql \
+      --restart=always \
+      mysql:8
 
 ##redis数据库
+# 容器安装
+docker run -d \
+  --name redis \
+  -p 6379:6379 \
+  --restart=always \
+  redis
+
+##minio数据库
+# 容器安装
+docker run -d \
+  --name minio \
+  -p 9000:9000 \
+  -v /data/minio-data:/data \
+  --restart=always \
+  minio/minio server /data
+
+## jdk版本：1.8
+# linux安装命令：sudo apt install openjdk-8-jdk
+
+## 启动后端脚本 默认端口8080
+#!/bin/bash
+
+# 配置环境变量
+export DB_HOST="localhost"                # 数据库主机（如 MySQL）
+export DB_PORT="3306"                     # 数据库端口
+export DB_USERNAME="root"                 # 数据库用户名
+export DB_PASSWORD="1502414957@Gpt"                     # 数据库密码
+export DB_NAME="white-rs"                 # 数据库名称
+
+export REDIS_HOST="localhost"             # Redis 主机
+export REDIS_PORT="6379"                  # Redis 端口
+export REDIS_PASSWORD=""                  # Redis 密码
+export REDIS_DATABASE="0"                 # Redis 数据库索引
+
+export MINIO_ENDPOINT="http://localhost:9000"  # Minio 服务地址
+export MINIO_ACCESS_KEY="minioadmin"          # Minio 访问密钥
+export MINIO_SECRET_KEY="minioadmin"          # Minio 密钥
+export MINIO_BUCKET="white-rs"               # Minio 存储桶名称
+
+# 配置日志输出
+LOG_DIR="/docker/rwg/fuliao/logs"
+mkdir -p $LOG_DIR
+
+# 启动应用
+echo "Starting Spring Boot application..."
+java -jar /docker/rwg/fuliao/rs-1.0-SNAPSHOT.jar \
+    --spring.datasource.url=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai \
+    --spring.datasource.username=${DB_USERNAME} \
+    --spring.datasource.password=${DB_PASSWORD} \
+    --spring.redis.host=${REDIS_HOST} \
+    --spring.redis.port=${REDIS_PORT} \
+    --spring.redis.password=${REDIS_PASSWORD} \
+    --spring.redis.database=${REDIS_DATABASE} \
+    --minio.endpoint=${MINIO_ENDPOINT} \
+    --minio.accessKey=${MINIO_ACCESS_KEY} \
+    --minio.secretKey=${MINIO_SECRET_KEY} \
+    --minio.bucket=${MINIO_BUCKET} \
+    --logging.file.name=${LOG_DIR}/white-rs.log \
+    --logging.file.max-size=10MB \
+    --logging.file.max-history=30
+
+# 完成启动
+echo "Application started. Logs are available at ${LOG_DIR}/white-rs.log"
+
+## 关闭后端脚本
+
+#!/bin/bash
+
+# 查找运行的 java -jar 程序的进程 ID
+PID=$(ps aux | grep 'java -jar /docker/rwg/fuliao/rs-1.0-SNAPSHOT.jar' | grep -v 'grep' | awk '{print $2}')
+
+# 如果找到了 PID，则执行杀死操作
+if [ -n "$PID" ]; then
+    echo "Found Java process with PID: $PID. Stopping it..."
+    kill -9 $PID
+    echo "Java process stopped."
+else
+    echo "No Java process found. It may already be stopped."
+fi
+
 
 
 

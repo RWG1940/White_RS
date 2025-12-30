@@ -61,16 +61,16 @@ public class MinioServiceImpl implements MinioService {
 
             // 先生成唯一的文件key
             String fileKey = generateFileKey(file);
-            
+
             // 保存文件信息到数据库（包含fileKey）
             fileResourceService.saveFileInfoWithKey(file, fileKey, bizType, bizId, creatorId);
-            
+
             // 上传文件到MinIO
             uploadFileToMinioWithKey(fileKey, file);
-            
+
             logger.info("文件上传成功，文件名：{}，文件key：{}", file.getOriginalFilename(), fileKey);
 
-            return WhiteResponse.success("/api/files/download/"+fileKey);
+            return WhiteResponse.success("/api/files/download/" + fileKey);
         } catch (Exception e) {
             logger.error("文件上传失败", e);
             return WhiteResponse.fail("文件上传失败：" + e.getMessage());
@@ -106,7 +106,7 @@ public class MinioServiceImpl implements MinioService {
             // 获取文件信息
             FileResource fileResource = fileResourceService.getByFileKey(fileKey);
             String fileName = fileResource != null ? fileResource.getFileName() : fileKey;
-            
+
             // 使用传统的读取方式替代readAllBytes()
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int nRead;
@@ -115,17 +115,17 @@ public class MinioServiceImpl implements MinioService {
                 buffer.write(data, 0, nRead);
             }
             byte[] bytes = buffer.toByteArray();
-            
+
             HttpHeaders headers = new HttpHeaders();
             try {
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, 
-                           "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8") + "\"");
+                headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + URLEncoder.encode(fileName, "UTF-8") + "\"");
             } catch (UnsupportedEncodingException e) {
                 // 如果UTF-8编码不支持，则使用默认编码
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, 
-                           "attachment; filename=\"" + fileName + "\"");
+                headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + fileName + "\"");
             }
-            
+
             logger.info("文件下载成功，文件key：{}", fileKey);
             return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
         } catch (Exception e) {
@@ -139,18 +139,18 @@ public class MinioServiceImpl implements MinioService {
     public WhiteResponse deleteFile(String... fileKeys) {
         // Convert varargs to list
         List<String> fileKeyList = Arrays.asList(fileKeys);
-        
+
         List<String> failedDeletes = new ArrayList<>();
         List<String> successfulDeletes = new ArrayList<>();
-        
+
         for (String fileKey : fileKeyList) {
             try {
                 // 从MinIO删除文件
                 deleteFileFromMinio(fileKey);
-                
+
                 // 从数据库中标记为已删除
                 boolean deleted = fileResourceService.deleteFileInfo(fileKey);
-                
+
                 if (deleted) {
                     successfulDeletes.add(fileKey);
                     logger.info("文件删除成功，文件key：{}", fileKey);
@@ -163,7 +163,7 @@ public class MinioServiceImpl implements MinioService {
                 logger.error("文件删除失败，文件key：{}", fileKey, e);
             }
         }
-        
+
         if (failedDeletes.isEmpty()) {
             if (fileKeyList.size() == 1) {
                 return WhiteResponse.success("文件删除成功");
@@ -191,13 +191,13 @@ public class MinioServiceImpl implements MinioService {
             if (fileResource == null) {
                 return WhiteResponse.fail("文件不存在");
             }
-            
+
             // 更新文件到MinIO
             String updatedFileKey = updateFileInMinio(fileKey, file, fileResource);
-            
+
             // 更新文件信息
             fileResourceService.updateFileInfo(fileResource);
-            
+
             logger.info("文件更新成功，文件key：{}", updatedFileKey);
 
             return WhiteResponse.success(updatedFileKey);
@@ -232,9 +232,9 @@ public class MinioServiceImpl implements MinioService {
 
         return fileName;
     }
-    
+
     @Override
-    public byte[] downloadFileAsBytes(String fileKey) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+    public byte[] downloadFileAsBytes(String fileKey) {
         try (InputStream inputStream = getFile(fileKey)) {
             // 使用ByteArrayOutputStream读取输入流
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -244,12 +244,10 @@ public class MinioServiceImpl implements MinioService {
                 buffer.write(data, 0, nRead);
             }
             byte[] result = buffer.toByteArray();
-            System.out.println("下载文件数据长度: " + result.length + ", fileKey: " + fileKey);
             return result;
         } catch (Exception e) {
-            System.err.println("下载文件失败，fileKey: " + fileKey);
-            e.printStackTrace();
-            throw e;
+            logger.error("文件下载失败，文件key：{}", fileKey, e);
+            return null;
         }
     }
 
@@ -300,6 +298,6 @@ public class MinioServiceImpl implements MinioService {
 
         return fileName;
     }
-    
+
 
 }

@@ -33,7 +33,6 @@ public class OnlineStatusController {
         Map<String, Object> result = new HashMap<>();
         result.put("userId", userId);
         result.put("isOnline", isOnline);
-        System.out.println("用户ID：" + userId+"是否在线："+isOnline);
         return WhiteResponse.success(result);
     }
 

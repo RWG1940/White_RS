@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import white.rs.common.response.WhiteResponse;
 import white.rs.domain.Webhook;
 import white.rs.domain.WebhookTableImport;
 import white.rs.service.WebhookService;
@@ -37,7 +38,7 @@ public class WebhookTableImportServiceImpl extends ServiceImpl<WebhookTableImpor
     private static final Logger logger = LoggerFactory.getLogger(WebhookTableImportServiceImpl.class);
     
     @Override
-    public boolean noticeGroup(String tableImportId,String sku) {
+    public WhiteResponse noticeGroup(String tableImportId, String sku) {
         logger.info("开始执行批量通知，tableImportId: {}", tableImportId);
         
         try {
@@ -50,7 +51,7 @@ public class WebhookTableImportServiceImpl extends ServiceImpl<WebhookTableImpor
 
             if (webhookTableImports.isEmpty()) {
                 logger.warn("未找到与tableImportId {} 关联的webhook", tableImportId);
-                return false;
+                return WhiteResponse.fail();
             }
             
             HttpHeaders headers = new HttpHeaders();
@@ -96,7 +97,7 @@ public class WebhookTableImportServiceImpl extends ServiceImpl<WebhookTableImpor
                                     +     "> <@all>\""
                                     + "}"
                                     + "}";
-                    logger.debug("发送请求到webhook: {}, payload: {}", webhookUrl, payload);
+                    logger.info("发送请求到webhook: {}, payload: {}", webhookUrl, payload);
 
                     HttpEntity<String> request = new HttpEntity<>(payload, headers);
                     
@@ -124,7 +125,6 @@ public class WebhookTableImportServiceImpl extends ServiceImpl<WebhookTableImpor
                         successCount++;
                     } catch (Exception e) {
                         logger.error("发送webhook通知失败: {}, 错误: {}, 原因: {}", webhookUrl, e.getMessage(), e.getCause() != null ? e.getCause().getMessage() : "无具体原因");
-                        e.printStackTrace();
                         failCount++;
                     }
                 } else {
@@ -136,10 +136,10 @@ public class WebhookTableImportServiceImpl extends ServiceImpl<WebhookTableImpor
             logger.info("批量通知完成，总处理: {}, 成功: {}, 失败: {}", 
                 webhookTableImports.size(), successCount, failCount);
             
-            return true;
+            return WhiteResponse.success();
         } catch (Exception e) {
             logger.error("批量通知过程中出现异常: {}, 堆栈: ", e.getMessage(), e);
-            return false;
+            return WhiteResponse.fail();
         }
     }
 }

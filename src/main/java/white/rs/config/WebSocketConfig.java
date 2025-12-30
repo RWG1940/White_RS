@@ -28,7 +28,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
         // 允许跨域
         registry.addHandler(onlineStatusWebSocketHandler, "/ws/online")
                 .addInterceptors(webSocketAuthInterceptor)
-                .setAllowedOrigins("*"); // 生产环境建议配置具体的域名
+                .setAllowedOrigins("*");
     }
 }
 

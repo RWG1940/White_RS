@@ -1,10 +1,19 @@
 package white.rs.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import white.rs.common.response.WhiteResponse;
+import white.rs.common.util.JwtUtil;
 import white.rs.common.util.PasswordUtil;
 import white.rs.domain.Roles;
 import white.rs.domain.UserRole;
@@ -15,9 +24,8 @@ import white.rs.mapper.UserRoleMapper;
 import white.rs.mapper.UsersMapper;
 import white.rs.service.UsersService;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -37,16 +45,29 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
     @Autowired
     private RolesMapper rolesMapper;
 
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    /*
+     * 根据用户名查询用户信息
+     */
     @Override
     public Users getByUsername(String username) {
         return usersMapper.selectByUsernameWithRoles(username);
     }
 
+    /*
+     * 根据用户ID获取角色列表
+     */
     @Override
     public List<String> getRoleCodesByUserId(Long userId) {
         return usersMapper.selectRoleCodesByUserId(userId);
     }
 
+    /*
+     * 更新用户登录信息
+     */
     @Override
     public void updateLoginInfo(Long userId, String loginIp) {
         Users user = new Users();
@@ -56,7 +77,9 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         updateById(user);
     }
 
-    // 重新添加新用户
+    /*
+     * 保存用户
+     */
     @Override
     public boolean save(Users entity) {
         // 添加初始加密的密码为1234
@@ -64,32 +87,25 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         return super.save(entity);
     }
 
+    /*
+     * 获取用户信息
+     */
     @Override
     public UserWithRolesDTO getUserWithRolesById(Long userId) {
-        // 获取用户信息
         Users user = getById(userId);
         if (user == null) {
             return null;
         }
-
-        // 获取用户角色列表
         List<Roles> roles = getRolesByUserId(userId);
-
-        // 封装成DTO
         return new UserWithRolesDTO(user, roles);
     }
 
+    /*
+     * 批量获取用户信息
+     */
     @Override
     public List<UserWithRolesDTO> listUsersWithRoles() {
-        // 获取所有用户
         List<Users> users = list();
-        
-        // 获取所有用户的ID
-        List<Long> userIds = users.stream()
-                .map(Users::getId)
-                .collect(Collectors.toList());
-
-        // 批量获取用户角色映射
         List<UserWithRolesDTO> userWithRolesList = new ArrayList<>();
         for (Users user : users) {
             List<Roles> roles = getRolesByUserId(user.getId());
@@ -99,21 +115,23 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         return userWithRolesList;
     }
 
+    /*
+     * 批量获取用户信息
+     */
     @Override
     public List<UserWithRolesDTO> listUsersWithRolesByIds(List<Long> userIds) {
-        // 获取指定用户
         List<Users> users = listByIds(userIds);
-        
-        // 批量获取用户角色映射
         List<UserWithRolesDTO> userWithRolesList = new ArrayList<>();
         for (Users user : users) {
             List<Roles> roles = getRolesByUserId(user.getId());
             userWithRolesList.add(new UserWithRolesDTO(user, roles));
         }
-
         return userWithRolesList;
     }
 
+    /*
+     * 保存用户和角色关系
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean saveUserWithRoles(Users user, List<Long> roleIds) {
@@ -122,12 +140,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         if (!saved) {
             return false;
         }
-
         // 保存用户角色关系
         if (roleIds != null && !roleIds.isEmpty()) {
             Long userId = user.getId();
             List<UserRole> userRoles = new ArrayList<>();
-            
             for (Long roleId : roleIds) {
                 UserRole userRole = new UserRole();
                 userRole.setUserId(userId);
@@ -137,13 +153,14 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
                 userRole.setAssignedBy(null);
                 userRoles.add(userRole);
             }
-            
             return userRoleMapper.insertBatchSomeColumn(userRoles) > 0;
         }
-        
         return true;
     }
 
+    /*
+     * 更新用户和角色关系
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateUserWithRoles(Users user, List<Long> roleIds) {
@@ -162,7 +179,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         if (roleIds != null && !roleIds.isEmpty()) {
             Long userId = user.getId();
             List<UserRole> userRoles = new ArrayList<>();
-            
+
             for (Long roleId : roleIds) {
                 UserRole userRole = new UserRole();
                 userRole.setUserId(userId);
@@ -172,59 +189,275 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
                 userRole.setAssignedBy(null);
                 userRoles.add(userRole);
             }
-            
+
             return userRoleMapper.insertBatchSomeColumn(userRoles) > 0;
         }
-        
+
         return true;
     }
 
+    /*
+     * 删除用户和角色关系
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeUserWithRoles(Long userId) {
-        // 删除用户角色关系
         QueryWrapper<UserRole> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", userId);
         userRoleMapper.delete(queryWrapper);
-
-        // 删除用户
         return removeById(userId);
     }
 
+    /*
+     * 批量删除用户和角色关系
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean removeUsersWithRoles(List<Long> userIds) {
-        // 删除用户角色关系
         QueryWrapper<UserRole> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("user_id", userIds);
         userRoleMapper.delete(queryWrapper);
-
-        // 删除用户
         return removeByIds(userIds);
     }
 
+    /*
+     * 分页查询用户和角色关系
+     */
+    @Override
+    public IPage<UserWithRolesDTO> pageUsersWithRoles(Long current, Long size) {
+        // 创建分页对象
+        IPage<Users> userPage = new Page<>(current, size);
+        // 查询用户分页数据
+        IPage<Users> pageResult = page(userPage);
+        // 转换为UserWithRolesDTO分页数据
+        IPage<UserWithRolesDTO> dtoPage = new Page<>(current, size, pageResult.getTotal());
+        // 获取用户ID列表
+        List<Long> userIds = pageResult.getRecords().stream()
+                .map(Users::getId)
+                .collect(Collectors.toList());
+        // 批量查询用户及其角色
+        List<UserWithRolesDTO> userWithRolesList = listUsersWithRolesByIds(userIds);
+        dtoPage.setRecords(userWithRolesList);
+        return dtoPage;
+    }
+
+    /*
+     * 搜索用户和角色关系
+     */
+    @Override
+    public List<UserWithRolesDTO> searchUsersWithRoles(String column, String keyword) {
+        // 构建查询条件
+        QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like(column, keyword);
+        // 查询用户列表
+        List<Users> users = list(queryWrapper);
+        // 获取用户ID列表
+        List<Long> userIds = users.stream()
+                .map(Users::getId)
+                .collect(Collectors.toList());
+        // 批量查询用户及其角色
+        return listUsersWithRolesByIds(userIds);
+    }
+
+    /*
+     * 保存用户和角色关系并返回DTO
+     */
+    @Override
+    public UserWithRolesDTO saveUserWithRolesAndReturnDTO(Users user, List<Long> roleIds) {
+        boolean saved = saveUserWithRoles(user, roleIds);
+        if (saved) {
+            return getUserWithRolesById(user.getId());
+        }
+        return null;
+    }
+
+    /*
+     * 更新用户和角色关系并返回DTO
+     */
+    @Override
+    public UserWithRolesDTO updateUserWithRolesAndReturnDTO(Users user, List<Long> roleIds) {
+        boolean updated = updateUserWithRoles(user, roleIds);
+        if (updated) {
+            return getUserWithRolesById(user.getId());
+        }
+        return null;
+    }
+
+    /*
+     * 删除用户和角色关系并返回响应
+     */
+    @Override
+    public WhiteResponse<Void> removeUserWithRolesAndReturnResponse(Long userId) {
+        boolean removed = removeUserWithRoles(userId);
+        if (removed) {
+            return WhiteResponse.success();
+        }
+        return WhiteResponse.fail("删除失败");
+    }
+
+    /*
+     * 批量删除用户和角色关系并返回响应
+     */
+    @Override
+    public WhiteResponse<Void> removeUsersWithRolesAndReturnResponse(List<Long> userIds) {
+        boolean removed = removeUsersWithRoles(userIds);
+        if (removed) {
+            return WhiteResponse.success();
+        }
+        return WhiteResponse.fail("删除失败");
+    }
+
+    /*
+     * 保存用户和角色关系并返回响应
+     */
+    @Override
+    public WhiteResponse<UserWithRolesDTO> saveUserWithRolesAndReturnResponse(Users user, List<Long> roleIds) {
+        UserWithRolesDTO userWithRoles = saveUserWithRolesAndReturnDTO(user, roleIds);
+        if (userWithRoles != null) {
+            return WhiteResponse.success(userWithRoles);
+        }
+        return WhiteResponse.fail("保存失败");
+    }
+
+    /*
+     * 更新用户和角色关系并返回响应
+     */
+    @Override
+    public WhiteResponse<UserWithRolesDTO> updateUserWithRolesAndReturnResponse(Users user, List<Long> roleIds) {
+        UserWithRolesDTO userWithRoles = updateUserWithRolesAndReturnDTO(user, roleIds);
+        if (userWithRoles != null) {
+            return WhiteResponse.success(userWithRoles);
+        }
+        return WhiteResponse.fail("更新失败");
+    }
+
+    @Override
+    public WhiteResponse<Map<String, Object>> userLogin(String username, HttpServletRequest request) {
+            Users user = getByUsername(username);
+            // 生成JWT Token
+            String token = jwtUtil.generateToken(user.getId(), username);
+
+            // 查询用户角色
+            List<String> roleCodes = getRoleCodesByUserId(user.getId());
+
+            // 更新登录信息
+            String loginIp = getClientIp(request);
+            updateLoginInfo(user.getId(), loginIp);
+
+            // 构建返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", token);
+            result.put("username", username);
+            result.put("userId", user.getId());
+            result.put("email", user.getEmail());
+            result.put("phone", user.getPhone());
+            result.put("roles", roleCodes);
+            return WhiteResponse.success("登录成功", result);
+    }
+
+    @Override
+    public WhiteResponse<Map<String, Object>> getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return WhiteResponse.fail(401, "未登录");
+            }
+
+            String username = authentication.getName();
+            Users user = getByUsername(username);
+            if (user == null) {
+                return WhiteResponse.fail(404, "用户不存在");
+            }
+
+            List<String> roleCodes = getRoleCodesByUserId(user.getId());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("userId", user.getId());
+            result.put("username", user.getUsername());
+            result.put("email", user.getEmail());
+            result.put("phone", user.getPhone());
+            result.put("status", user.getStatus());
+            result.put("roles", roleCodes);
+            result.put("avatarUrl", user.getAvatarUrl());
+
+            return WhiteResponse.success(result);
+        } catch (Exception e) {
+            return WhiteResponse.fail(500, "获取用户信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public WhiteResponse changePassword(Map<String, String> req) {
+        String id = req.get("id");
+        String oldPassword = req.get("oldPassword");
+        String newPassword = req.get("newPassword");
+        String confirmPassword = req.get("confirmPassword");
+        // 验证新密码和确认密码是否一致
+        if (!newPassword.equals(confirmPassword)) {
+            return WhiteResponse.fail("两次密码不一致");
+        }
+        // 构建QueryWrapper
+        QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("id", id);
+        Users user = super.getOne(queryWrapper);
+        // 验证旧密码是否正确
+        if (!PasswordUtil.matches(oldPassword, user.getPasswordHash())) {
+            return WhiteResponse.fail("旧密码错误");
+        }
+        // 修改密码
+        user.setPasswordHash(PasswordUtil.encode(newPassword));
+
+        return super
+                .update(user, queryWrapper)
+                ? WhiteResponse.success("密码修改成功")
+                : WhiteResponse.fail("密码修改失败");
+
+
+    }
+
     /**
-     * 根据用户ID获取角色列表
-     *
-     * @param userId 用户ID
-     * @return 角色列表
+     * 获取客户端IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 处理多个IP的情况，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
+    /*
+     * 获取用户角色列表
      */
     private List<Roles> getRolesByUserId(Long userId) {
         // 查询用户角色关系
         QueryWrapper<UserRole> userRoleQueryWrapper = new QueryWrapper<>();
         userRoleQueryWrapper.eq("user_id", userId);
         List<UserRole> userRoles = userRoleMapper.selectList(userRoleQueryWrapper);
-
         // 获取角色ID列表
         List<Long> roleIds = userRoles.stream()
                 .map(UserRole::getRoleId)
                 .collect(Collectors.toList());
-
         // 如果没有角色，直接返回空列表
         if (roleIds.isEmpty()) {
             return new ArrayList<>();
         }
-
         // 查询角色信息
         return rolesMapper.selectBatchIds(roleIds);
     }

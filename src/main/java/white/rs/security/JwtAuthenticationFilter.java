@@ -11,14 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import white.rs.common.util.JwtUtil;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.crypto.SecretKey;
-import java.util.Base64;
-
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -51,8 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String token = getTokenFromRequest(request);
-        // 日志输出正在请求的路径uri
-        logger.info("正在请求的路径：" + request.getRequestURI());
+
         if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
             String username = jwtUtil.getUsernameFromToken(token);
 
@@ -67,10 +60,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     userDetails.getAuthorities()
                             );
                     // 日志输出用户名及拥有的权限
-                    logger.info("用户名：" + username + "，权限：" + userDetails.getAuthorities());
+                    logger.warn("用户名：" + username + "，权限：" + userDetails.getAuthorities()+"正在请求的路径：" + request.getRequestURI());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
+                    // 日志输出正在请求的路径uri
+                    logger.warn("未认证用户，正在请求的路径：" + request.getRequestURI());
                     // 如果没有配置UserDetailsService，则只设置基本的认证信息
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(

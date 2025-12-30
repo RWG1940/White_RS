@@ -1,5 +1,7 @@
 package white.rs.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +23,8 @@ import java.util.List;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     @Autowired
     private UsersService usersService;
 
@@ -30,15 +34,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Users user = usersService.getByUsername(username);
 
         if (user == null) {
-            throw new UsernameNotFoundException("用户不存在: " + username);
+            logger.warn("用户不存在: " + username);
         }
 
         // 检查账号状态：0禁用 1正常 2锁定
         if (user.getStatus() == null || user.getStatus() == 0) {
-            throw new UsernameNotFoundException("账号已被禁用");
+            logger.warn("账号已被禁用");
         }
         if (user.getStatus() == 2) {
-            throw new UsernameNotFoundException("账号已被锁定");
+            logger.warn("账号已被锁定");
         }
 
         // 查询用户角色编码

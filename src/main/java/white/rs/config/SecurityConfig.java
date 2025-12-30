@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -27,6 +28,9 @@ public class SecurityConfig {
     @Autowired
     @Lazy
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Autowired
+    private Environment env;
 
     /**
      * 密码编码器
@@ -63,21 +67,29 @@ public class SecurityConfig {
                 // 允许访问的路径（无需认证）
                 .antMatchers(
                         "/api/auth",
-                        "/doc.html",
-                        "/swagger-ui.html",
-                        "/swagger-ui/**",
-                        "/v2/api-docs",
-                        "/v3/api-docs/**",
-                        "/swagger-resources/**",
-                        "/webjars/**",
-                        "/favicon.ico",
                         "/api/auth/**",
                         "/ws/**",  // WebSocket 连接路径（由 WebSocketAuthInterceptor 处理认证）
                         "/error",
                         "/api/files/**",  // 文件上传下载接口
                         "/acc/importExcel",
-                        "/acc/exportExcel"
-                ).permitAll()
+                        "/favicon.ico"
+                ).permitAll();
+                
+        // 只在开发环境下允许访问API文档相关路径
+        if (env.acceptsProfiles("dev")) {
+            http.authorizeRequests()
+                .antMatchers(
+                    "/doc.html",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v2/api-docs",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll();
+        }
+                
+        http.authorizeRequests()
                 // 其他请求需要认证
                 .anyRequest().authenticated()
                 .and()
@@ -87,4 +99,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-

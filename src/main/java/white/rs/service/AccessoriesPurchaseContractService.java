@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author Administrator
@@ -23,5 +24,5 @@ public interface AccessoriesPurchaseContractService extends IService<Accessories
 
     WhiteResponse importExcel(MultipartFile file,String importId);
     
-    void exportExcel(List<AccessoriesPurchaseContract> contractList, HttpServletResponse response);
+    void exportExcel(Map<String, Object> body, HttpServletResponse response);
 }

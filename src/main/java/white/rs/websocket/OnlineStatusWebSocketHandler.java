@@ -66,7 +66,7 @@ public class OnlineStatusWebSocketHandler extends TextWebSocketHandler {
             } else {
                 onlineStatusService.setUserOnline(userId);
             }
-            logger.debug("收到用户 {} 的心跳消息", userId);
+            logger.info("收到用户 {} 的心跳消息", userId);
 
             // 可以在这里处理其他业务消息
             String payload = message.getPayload();

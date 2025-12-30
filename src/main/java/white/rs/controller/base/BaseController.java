@@ -1,10 +1,8 @@
 package white.rs.controller.base;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import white.rs.common.response.ResponseCode;
 import white.rs.common.response.WhiteResponse;
@@ -109,7 +107,7 @@ public abstract class BaseController<T, S extends IService<T>> {
     @GetMapping("/search")
     @ApiOperation("模糊查询")
     public Object search(@RequestParam String column,
-                                       @RequestParam String keyword) {
+                         @RequestParam String keyword) {
 
         QueryWrapper<T> wrapper = new QueryWrapper<>();
         wrapper.like(column, keyword);

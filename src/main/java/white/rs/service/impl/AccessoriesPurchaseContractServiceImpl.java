@@ -1,5 +1,6 @@
 package white.rs.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
@@ -11,6 +12,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.multipart.MultipartFile;
 import white.rs.common.response.ResponseCode;
@@ -35,12 +38,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
 
-
 /**
  * @author Administrator
  * @description 针对表【accessories_purchase_contract(洗标吊牌信息表（支持批量导入，多季度管理）)】的数据库操作Service实现
  * @createDate 2025-12-10 10:59:57
  */
+
 @Service
 public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<AccessoriesPurchaseContractMapper, AccessoriesPurchaseContract> implements AccessoriesPurchaseContractService {
     @Autowired
@@ -51,9 +54,11 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
     private FileResourceServiceImpl fileResourceService;
     @Autowired
     private TableImportService tableImportService;
-    
+
     @Autowired
     private UsersService usersService;
+
+    private static final Logger logger = LoggerFactory.getLogger(AccessoriesPurchaseContractServiceImpl.class);
 
     // 添加辅助方法用于获取单元格值
     private String getCellValueAsString(Cell cell) {
@@ -84,6 +89,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             try {
                 return new SimpleDateFormat("yyyy/MM/dd").parse(dateStr);
             } catch (Exception ex) {
+                logger.error("日期解析失败: " + e.getMessage());
                 return null;
             }
         }
@@ -114,7 +120,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             accessoriesPurchaseContractMapper.updateById(acc);
             return WhiteResponse.success();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("添加文件失败: " + e.getMessage());
             return WhiteResponse.fail();
         }
     }
@@ -134,7 +140,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             accessoriesPurchaseContractMapper.updateById(acc);
             return WhiteResponse.success();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("更新文件失败: " + e.getMessage());
             return WhiteResponse.fail();
         }
     }
@@ -163,121 +169,110 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             return WhiteResponse.success();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("删除文件失败: " + e.getMessage());
             return WhiteResponse.fail();
         }
 
     }
 
-    /**
-     * 获取当前用户的ID
-     */
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String username = userDetails.getUsername();
-            
-            // 根据用户名获取用户ID
-            white.rs.domain.Users user = usersService.getByUsername(username);
-            if (user != null) {
-                return user.getId();
-            }
-        }
-        return null;
-    }
-    
+
     /**
      * 获取当前用户的角色编码列表
      */
     private List<String> getCurrentUserRoles() {
+        System.out.println("检查权限");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("authentication" + authentication);
+
         if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String username = userDetails.getUsername();
-            
             // 根据用户名获取用户ID
             white.rs.domain.Users user = usersService.getByUsername(username);
             if (user != null) {
                 return usersService.getRoleCodesByUserId(user.getId());
+            } else {
+                logger.warn("用户不存在");
             }
+        } else {
+            logger.warn("未获取到用户信息");
         }
         return new ArrayList<>();
     }
-    
+
     /**
      * 检查当前用户是否拥有指定角色
      */
     private boolean hasRole(String roleCode) {
         List<String> roles = getCurrentUserRoles();
+        logger.info("当前用户角色：" + roles);
         return roles.contains(roleCode);
     }
-    
+
     /**
      * 根据用户角色获取允许导入的字段映射
      */
     private Set<String> getAllowedFieldsByRole() {
         Set<String> allowedFields = new HashSet<>();
-        
+
         // 检查当前用户角色
         if (hasRole("3294") || hasRole("5293")) {
             // 3294和5293角色可以导入所有字段
             allowedFields.addAll(Arrays.asList(
-                "图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质",
-                "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", "洗标单价", 
-                "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态", 
-                "洗标确认时间", "洗标出货时间", "洗标快递单号", "吊牌优先级", 
-                "吊牌状态", "吊牌确认时间", "吊牌出货时间", "吊牌快递单号", 
-                "季度", "洗标实际出货数量", "吊牌实际出货数量", "备注"
+                    "图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质",
+                    "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", "洗标单价",
+                    "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态",
+                    "洗标确认时间", "洗标出货时间", "洗标快递单号", "吊牌优先级",
+                    "吊牌状态", "吊牌确认时间", "吊牌出货时间", "吊牌快递单号",
+                    "季度", "洗标实际出货数量", "吊牌实际出货数量", "备注"
             ));
         } else {
             // 6666及其他角色只能导入特定字段，但必须包含用于识别记录的字段
             allowedFields.addAll(Arrays.asList(
-                "货号", "颜色", "洗标单价", "吊牌单价", "洗标状态", "洗标实际出货数量", 
-                "洗标出货时间", "洗标快递单号", "吊牌状态", "吊牌出货时间", 
-                "吊牌实际出货数量", "吊牌快递单号", "备注"
+                    "货号", "颜色", "洗标单价", "吊牌单价", "洗标状态", "洗标实际出货数量",
+                    "洗标出货时间", "洗标快递单号", "吊牌状态", "吊牌出货时间",
+                    "吊牌实际出货数量", "吊牌快递单号", "备注"
             ));
         }
-        
+
         return allowedFields;
     }
-    
+
     /**
      * 根据用户角色获取导出字段列表
      */
     private List<String> getExportFieldsByRole() {
         List<String> exportFields = new ArrayList<>();
-        
+
         // 检查当前用户角色
         // 如果用户拥有3294或5293角色，则可以导出所有字段
         List<String> userRoles = getCurrentUserRoles();
-        System.out.println("当前用户角色列表: " + userRoles); // 调试信息
-        
+
         if (userRoles.contains("3294") || userRoles.contains("5293")) {
             // 3294和5293角色可以导出所有字段
             exportFields.addAll(Arrays.asList(
-                "季度","图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质",
-                "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量","洗标实际出货数量" , "吊牌实际出货数量","洗标单价", 
-                "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态", "洗标确认时间", 
-                 "洗标出货时间", "洗标快递单号", "吊牌优先级", "吊牌状态", 
-                "吊牌确认时间", "吊牌出货时间", "吊牌快递单号"
+                    "季度", "图片", "货号", "颜色", "品牌", "英文品名", "大面材料", "里衬材质",
+                    "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", "洗标实际出货数量", "吊牌实际出货数量", "洗标单价",
+                    "洗标总价", "吊牌单价", "吊牌总价", "洗标优先级", "洗标状态", "洗标确认时间",
+                    "洗标出货时间", "洗标快递单号", "吊牌优先级", "吊牌状态",
+                    "吊牌确认时间", "吊牌出货时间", "吊牌快递单号"
             ));
         } else {
             // 6666及其他角色只能导出特定字段，按指定顺序排列
             exportFields.addAll(Arrays.asList(
-                "货号", "颜色", "品牌", "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量", 
-                "洗标实际出货数量", "吊牌实际出货数量", "洗标单价", "洗标总价", "吊牌单价", "吊牌总价", 
-                "洗标优先级", "洗标状态", "洗标确认时间", "洗标出货时间", "洗标快递单号", 
-                "吊牌优先级", "吊牌状态", "吊牌确认时间", "吊牌出货时间", "吊牌快递单号", 
-                "英文品名", "大面材料", "里衬材质"
+                    "货号", "颜色", "品牌", "洗标颜色", "洗标种类", "工厂", "地址", "跟单", "数量",
+                    "洗标实际出货数量", "吊牌实际出货数量", "洗标单价", "洗标总价", "吊牌单价", "吊牌总价",
+                    "洗标优先级", "洗标状态", "洗标确认时间", "洗标出货时间", "洗标快递单号",
+                    "吊牌优先级", "吊牌状态", "吊牌确认时间", "吊牌出货时间", "吊牌快递单号",
+                    "英文品名", "大面材料", "里衬材质"
             ));
         }
-        
+
         return exportFields;
     }
 
     @Override
-    public WhiteResponse importExcel(MultipartFile file,String importId) {
+    public WhiteResponse importExcel(MultipartFile file, String importId) {
         try {
             List<AccessoriesPurchaseContract> list = new ArrayList<>();
 
@@ -297,7 +292,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
 
             // 获取当前用户允许导入的字段
             Set<String> allowedFields = getAllowedFieldsByRole();
-            
+
             // 创建列名映射，只包含允许的字段
             Map<String, Integer> fieldMap = new HashMap<>();
             for (int i = 0; i < lastCellNum; i++) {
@@ -310,7 +305,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
             }
-            
+
             // 仅处理允许的字段，忽略没有权限的字段
 
             // 提取图片信息（仅支持.xlsx格式）
@@ -599,7 +594,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         contract.setQuarter(getCellValueAsString(cell));
                     }
                 }
-                
+
                 if (fieldMap.containsKey("备注")) {
                     Cell cell = row.getCell(fieldMap.get("备注"));
                     if (cell != null) {
@@ -614,7 +609,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             // 这里不应该声明对象，后续有待优化
             TableImport tableImport = new TableImport();
             tableImport.setId(Long.valueOf(importId));
-            if (tableImportService.getById(importId) == null){
+            if (tableImportService.getById(importId) == null) {
                 tableImportService.save(tableImport);
             }
             workbook.close();
@@ -632,16 +627,17 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 }
 
 
-                // ② 查询数据库是否已存在该 sc_id
+                // ② 查询数据库是否已存在该 sc_id 且 import_id 相同
                 AccessoriesPurchaseContract exist = this.lambdaQuery()
                         .eq(AccessoriesPurchaseContract::getScId, scId)
+                        .eq(AccessoriesPurchaseContract::getImportId, Long.valueOf(importId))
                         .one();
 
                 if (exist != null) {
                     // ③ 已存在 → 执行更新（根据导入的字段更新，避免未导入字段被置为null）
                     AccessoriesPurchaseContract updateItem = new AccessoriesPurchaseContract();
                     boolean hasUpdate = false;
-                    
+
                     // 只更新从Excel导入的字段，避免将未导入的字段设为null
                     if (item.getSku() != null) {
                         updateItem.setSku(item.getSku());
@@ -767,7 +763,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         updateItem.setRemark(item.getRemark());
                         hasUpdate = true;
                     }
-                    
+
                     // 只有当存在要更新的字段时才执行更新
                     if (hasUpdate) {
                         updateItem.setScId(scId); // 确保scId一致
@@ -784,49 +780,120 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             return WhiteResponse.success("导入完成，共 " + list.size() + " 条（自动处理新增与更新）");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("导入失败: " + e.getMessage(), e);
             return WhiteResponse.fail("导入失败: " + e.getMessage());
         }
     }
 
     @Override
-    public void exportExcel(List<AccessoriesPurchaseContract> contractList, HttpServletResponse response) {
+    public void exportExcel(Map<String, Object> body, HttpServletResponse response) {
+        // 从请求体中获取参数
+        String keyword = (String) body.get("keyword");
+        // 获取排序字段
+        String sortBy = (String) body.get("sortBy");
+        // 获取排序参数
+        String sortOrder = (String) body.get("sortOrder");
+        Object exportIdsObj = body.get("exportIds");
+        String importIds;
+
+        // 处理 exportIds 可能是 ArrayList、String 或 Number 的情况
+        if (exportIdsObj instanceof String) {
+            importIds = (String) exportIdsObj;
+        } else if (exportIdsObj instanceof List) {
+            // 如果是 List，则将其转换为 JSON 字符串
+            importIds = JSON.toJSONString(exportIdsObj);
+        } else if (exportIdsObj instanceof Number) {
+            // 如果是单个数字，构造一个包含该数字的数组字符串
+            importIds = "[" + exportIdsObj.toString() + "]";
+        } else {
+            importIds = exportIdsObj != null ? exportIdsObj.toString() : null;
+        }
+
+        // 将importIds参数转换为Long列表
+        List<Long> importIdList = new ArrayList<>();
+        if (importIds != null && !importIds.isEmpty()) {
+            try {
+                importIdList = JSON.parseArray(importIds, Long.class);
+            } catch (Exception e) {
+                // 如果解析失败，尝试处理单个数字的情况
+                try {
+                    Long singleId = JSON.parseObject(importIds, Long.class);
+                    importIdList.add(singleId);
+                } catch (Exception ex) {
+                    // 忽略异常，使用空列表
+                    logger.error("解析 importIds 失败: " + e.getMessage(), e);
+                }
+            }
+        }
+
+        // 构建查询条件
+        QueryWrapper<AccessoriesPurchaseContract> queryWrapper = new QueryWrapper<>();
+
+        // 如果有搜索关键字，则添加搜索条件
+        if (keyword != null && !keyword.isEmpty()) {
+            queryWrapper.and(wrapper -> wrapper
+                    .like("sku", keyword)
+                    .or()
+                    .like("color", keyword)
+                    .or()
+                    .like("brand", keyword)
+                    .or()
+                    .like("name_en", keyword)
+                    .or()
+                    .like("factory", keyword)
+                    .or()
+                    .like("follower", keyword)
+            );
+        }
+
+        // 如果有排序字段，则添加排序条件
+        if (sortBy != null && !sortBy.isEmpty()) {
+            if ("desc".equalsIgnoreCase(sortOrder)) {
+                queryWrapper.orderByDesc(sortBy);
+            } else {
+                queryWrapper.orderByAsc(sortBy);
+            }
+        }
+
+        queryWrapper.in(importIdList != null && !importIdList.isEmpty(), "import_id", importIdList);
+        List<AccessoriesPurchaseContract> contractList = super.list(queryWrapper);
+
         try {
             // 创建工作簿
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("辅料购货合同");
-            
+
             // 创建表头样式
             CellStyle headerStyle = workbook.createCellStyle();
             Font headerFont = workbook.createFont();
             headerFont.setBold(true);
             headerStyle.setFont(headerFont);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
-            
+
             // 根据用户角色获取导出字段配置
             List<String> exportFields = getExportFieldsByRole();
-            
+
             // 创建表头行
             Row headerRow = sheet.createRow(0);
-            
+
             // 填充表头
             for (int i = 0; i < exportFields.size(); i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(exportFields.get(i));
                 cell.setCellStyle(headerStyle);
             }
-            
+
             // 填充数据
             int rowNum = 1;
             if (contractList != null && !contractList.isEmpty()) {
                 for (AccessoriesPurchaseContract contract : contractList) {
                     Row row = sheet.createRow(rowNum++);
-                    
+
                     // 根据角色权限导出指定字段
                     for (int i = 0; i < exportFields.size(); i++) {
                         String field = exportFields.get(i);
                         Cell cell = row.createCell(i);
-                        
+
                         switch (field) {
                             case "图片":
                                 // 处理图片列，如果存在图片则插入图片，否则保留URL文本
@@ -836,7 +903,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                                     if (imageUrl.startsWith("/api/files/download/")) {
                                         // 从API地址中提取文件key
                                         String fileKey = extractFileKeyFromUrl(imageUrl);
-                                        System.out.println("提取的fileKey: " + fileKey + ", imageUrl: " + imageUrl);
+
                                         if (fileKey != null) {
                                             // 尝试获取图片数据
                                             byte[] imageData = getImageDataFromFileKey(fileKey);
@@ -844,18 +911,17 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                                                 // 插入图片到单元格
                                                 insertImageToCell(workbook, sheet, row, i, imageData);
                                             } else {
-                                                // 如果无法获取图片数据，则保留URL文本
-                                                System.err.println("无法获取图片数据，fileKey: " + fileKey);
+                                                logger.error("获取图片数据失败，fileKey: " + fileKey);
                                                 cell.setCellValue(imageUrl);
                                             }
                                         } else {
                                             // 无法提取文件key，则保留URL文本
-                                            System.err.println("无法提取文件key，imageUrl: " + imageUrl);
+                                            logger.error("无法提取文件key，fileUrl: " + imageUrl);
                                             cell.setCellValue(imageUrl);
                                         }
                                     } else {
                                         // 不是API地址，保留URL文本
-                                        System.out.println("不是API地址，保留原始URL: " + imageUrl);
+                                        logger.error("不是API地址，fileUrl: " + imageUrl);
                                         cell.setCellValue(imageUrl);
                                     }
                                 } else {
@@ -979,6 +1045,9 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                             case "里衬材质":
                                 cell.setCellValue(contract.getMaterialLining() != null ? contract.getMaterialLining() : "");
                                 break;
+                            case "季度":
+                                cell.setCellValue(contract.getQuarter() != null ? contract.getQuarter() : "");
+                                break;
                             default:
                                 cell.setCellValue("");
                                 break;
@@ -986,23 +1055,23 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
             }
-            
+
             // 自动调整列宽
             for (int i = 0; i < exportFields.size(); i++) {
                 sheet.autoSizeColumn(i);
             }
-            
+
             // 设置响应头
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("utf-8");
             response.setHeader("Content-Disposition", "attachment; filename=accessories_purchase_contracts.xlsx");
-            
+
             // 写入输出流
             workbook.write(response.getOutputStream());
             workbook.close();
             response.getOutputStream().flush();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("导出 Excel 文件失败", e);
         }
     }
 
@@ -1020,7 +1089,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             // 方法2: 处理嵌入单元格的图片（DISPIMG公式）
             processEmbeddedCellPictures(sheet, imageMap);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("从Excel工作表中提取图片信息失败", e);
         }
     }
 
@@ -1067,7 +1136,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("处理浮动图片失败", e);
         }
     }
 
@@ -1124,7 +1193,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("处理嵌入单元格图片失败", e);
         }
     }
 
@@ -1175,15 +1244,15 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             QueryWrapper<FileResource> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("file_key", fileKey);
             FileResource fileResource = fileResourceService.getOne(queryWrapper);
-            
+
             if (fileResource != null) {
                 // 使用minioService下载文件数据
                 return minioService.downloadFileAsBytes(fileKey);
             } else {
-                System.err.println("未找到文件资源，fileKey: " + fileKey);
+                logger.error("文件不存在");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("获取图片数据失败", e);
         }
         return null;
     }
@@ -1191,11 +1260,11 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
     /**
      * 将图片插入到指定单元格
      *
-     * @param workbook   工作簿
-     * @param sheet      工作表
-     * @param row        行
-     * @param column     列索引
-     * @param imageData  图片数据
+     * @param workbook  工作簿
+     * @param sheet     工作表
+     * @param row       行
+     * @param column    列索引
+     * @param imageData 图片数据
      */
     private void insertImageToCell(Workbook workbook, Sheet sheet, Row row, int column, byte[] imageData) {
         try {
@@ -1207,7 +1276,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     drawing = ((XSSFSheet) sheet).createDrawingPatriarch();
                 }
             }
-            
+
             if (drawing != null) {
                 // 确定图片类型
                 int pictureType = Workbook.PICTURE_TYPE_JPEG; // 默认JPEG
@@ -1223,11 +1292,11 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         pictureType = Workbook.PICTURE_TYPE_DIB;
                     }
                 }
-                
-                System.out.println("准备添加图片到工作簿，图片类型: " + pictureType + ", 图片数据长度: " + imageData.length);
+
+                logger.info("图片类型：" + pictureType);
                 // 添加图片到工作簿
                 int pictureIdx = workbook.addPicture(imageData, pictureType);
-                
+
                 // 创建锚点（定义图片在单元格中的位置）
                 CreationHelper helper = workbook.getCreationHelper();
                 ClientAnchor anchor = helper.createClientAnchor();
@@ -1236,24 +1305,20 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 anchor.setCol2(column + 1);
                 anchor.setRow2(row.getRowNum() + 1);
                 anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
-                
+
                 // 创建图片并放置在单元格中
                 drawing.createPicture(anchor, pictureIdx);
-                System.out.println("成功创建图片");
-                
+
                 // 设置单元格值为空（图片会覆盖单元格）
                 Cell imageCell = row.createCell(column);
                 imageCell.setCellValue("");
             } else {
-                // 如果无法创建图片，则回退到显示URL文本
-                System.err.println("无法创建图片容器");
+                logger.error("无法创建绘制容器");
                 Cell imageCell = row.createCell(column);
                 imageCell.setCellValue("图片数据无法加载");
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            // 出错时回退到显示URL文本
-            System.err.println("插入图片到单元格时发生异常");
+            logger.error("插入图片失败", e);
             Cell imageCell = row.createCell(column);
             imageCell.setCellValue("图片加载失败");
         }
@@ -1315,7 +1380,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             }
         }
     }
-    
+
     /**
      * 将状态数字转换为中文描述
      * 0-未下单, 1-做货中, 2-货好等付款, 3-已出货
@@ -1327,7 +1392,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
         if (status == null || status.isEmpty()) {
             return "";
         }
-        
+
         try {
             int statusValue = Integer.parseInt(status);
             switch (statusValue) {
@@ -1347,7 +1412,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             return status;
         }
     }
-    
+
     /**
      * 将状态中文描述转换为数字
      * 未下单→0, 做货中→1, 货好等付款→2, 已出货→3
@@ -1359,9 +1424,9 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
         if (statusDesc == null || statusDesc.isEmpty()) {
             return statusDesc;
         }
-        
+
         String cleanedDesc = statusDesc.trim();
-        
+
         // 检查各种可能的状态描述，使用包含匹配以处理可能的空格或特殊字符
         if (cleanedDesc.contains("未下单")) {
             return "0";
@@ -1378,7 +1443,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 return cleanedDesc; // 如果已经是数字，直接返回
             } catch (NumberFormatException e) {
                 // 如果不是预定义的中文状态，也不是数字，返回原值
-                System.out.println("状态转换失败: " + statusDesc + " -> 保持原值");
+                logger.error("无法识别的状态描述：" + statusDesc);
                 return statusDesc;
             }
         }

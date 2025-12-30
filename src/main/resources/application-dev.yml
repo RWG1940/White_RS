@@ -1,9 +1,11 @@
 spring:
+  # mysql数据库
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://192.168.24.6:3306/white-rs?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: 194044
+  # redis数据库
   redis:
     host: 192.168.24.6
     port: 6379
@@ -19,13 +21,20 @@ spring:
 # MyBatis Plus开发环境配置
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
 
 # 开发环境日志配置
 logging:
   level:
-    white.rs: debug
-    org.springframework.web: debug
+    white.rs: warn
+    org.springframework.web: warn
+    # 开发环境保持API文档相关日志为INFO级别，便于调试
+    springfox: warn
+    springfox.documentation: warn
+    springfox.swagger: warn
+    com.github.xiaoymin.knife4j: warn
+    io.swagger: warn
 
 # MinIO配置
 minio:
@@ -33,5 +42,3 @@ minio:
   accessKey: minioadmin
   secretKey: minioadmin
   bucket: white-rs
-
-
