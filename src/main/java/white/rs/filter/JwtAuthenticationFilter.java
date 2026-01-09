@@ -1,4 +1,4 @@
-package white.rs.security;
+package white.rs.filter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.FileSharingMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.FileSharing">
+            <id property="shareId" column="share_id" jdbcType="INTEGER"/>
+            <result property="ownerId" column="owner_id" jdbcType="BIGINT"/>
+            <result property="sharedWithUserId" column="shared_with_user_id" jdbcType="BIGINT"/>
+            <result property="shareLink" column="share_link" jdbcType="VARCHAR"/>
+            <result property="sharePassword" column="share_password" jdbcType="VARCHAR"/>
+            <result property="shareType" column="share_type" jdbcType="OTHER"/>
+            <result property="shareTime" column="share_time" jdbcType="TIMESTAMP"/>
+            <result property="expirationTime" column="expiration_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        share_id,owner_id,shared_with_user_id,
+        share_link,share_password,share_type,
+        share_time,expiration_time
+    </sql>
+</mapper>

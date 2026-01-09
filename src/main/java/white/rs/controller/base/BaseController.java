@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 /**
  * 通用基础控制器
  * 子类只需继承 BaseController<T, S extends IService<T>>
@@ -45,6 +46,7 @@ public abstract class BaseController<T, S extends IService<T>> {
             @RequestParam(defaultValue = "10") Long size
     ) {
         Page<T> page = new Page<>(current, size);
+        page = baseService.page(page);
         return success(baseService.page(page));
     }
 
@@ -107,15 +109,49 @@ public abstract class BaseController<T, S extends IService<T>> {
     @GetMapping("/search")
     @ApiOperation("模糊查询")
     public Object search(@RequestParam String column,
-                         @RequestParam String keyword) {
+                         @RequestParam String keyword,
+                         @RequestParam(required = false) String column1,
+                         @RequestParam(required = false) String keyword1,
+                         @RequestParam(required = false) String column2,
+                         @RequestParam(required = false) String keyword2,
+                         @RequestParam(required = false) String column3,
+                         @RequestParam(required = false) String keyword3,
+                         @RequestParam(required = false) String column4,
+                         @RequestParam(required = false) String keyword4,
+                         @RequestParam(required = false) String column5,
+                         @RequestParam(required = false) String keyword5
+    ) {
 
         QueryWrapper<T> wrapper = new QueryWrapper<>();
         wrapper.like(column, keyword);
-
+        if (column1 != null && keyword1 != null) {
+            wrapper.like(column1, keyword1);
+        }
+        if (column2 != null && keyword2 != null) {
+            wrapper.like(column2, keyword2);
+        }
+        if (column3 != null && keyword3 != null) {
+            wrapper.like(column3, keyword3);
+        }
+        if (column4 != null && keyword4 != null) {
+            wrapper.like(column4, keyword4);
+        }
+        if (column5 != null && keyword5 != null) {
+            wrapper.like(column5, keyword5);
+        }
         List<T> list = baseService.list(wrapper);
         return success(list);
     }
 
+    // 精确查询接口
+    @GetMapping("/exact")
+    @ApiOperation("精确查询")
+    public Object exact(@RequestParam String column,
+                        @RequestParam String keyword) {
+        QueryWrapper<T> wrapper = new QueryWrapper<>();
+        wrapper.eq(column, keyword);
+        return success(baseService.list(wrapper));
+    }
 
     // ========== 响应封装 ==========
 

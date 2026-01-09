@@ -1,4 +1,4 @@
-package white.rs.security;
+package white.rs.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import white.rs.domain.Users;
+import white.rs.filter.JwtAuthenticationFilter;
 import white.rs.service.UsersService;
 
 import java.util.ArrayList;

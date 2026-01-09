@@ -58,7 +58,7 @@ public class LoginController {
         } catch (BadCredentialsException e) {
             return WhiteResponse.fail(401, "用户名或密码错误");
         } catch (Exception e) {
-            return WhiteResponse.fail(500, "登录失败: " + e.getMessage());
+            return WhiteResponse.fail(401, "登录失败，用户名或密码错误: " + e.getMessage());
         }
 
     }

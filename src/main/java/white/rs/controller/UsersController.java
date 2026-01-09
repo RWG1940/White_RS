@@ -111,7 +111,18 @@ public class UsersController extends BaseController<Users, UsersService> {
     @Override
     public Object search(
             @RequestParam String column,
-            @RequestParam String keyword) {
+            @RequestParam String keyword,
+            @RequestParam(required = false) String column1,
+            @RequestParam(required = false) String keyword1,
+            @RequestParam(required = false) String column2,
+            @RequestParam(required = false) String keyword2,
+            @RequestParam(required = false) String column3,
+            @RequestParam(required = false) String keyword3,
+            @RequestParam(required = false) String column4,
+            @RequestParam(required = false) String keyword4,
+            @RequestParam(required = false) String column5,
+            @RequestParam(required = false) String keyword5
+    ) {
         return WhiteResponse.success(usersService.searchUsersWithRoles(column, keyword));
     }
 }

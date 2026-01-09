@@ -2,7 +2,10 @@ package white.rs.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.web.multipart.MultipartFile;
+import white.rs.common.response.WhiteResponse;
 import white.rs.domain.FileResource;
+
+import java.util.List;
 
 /**
 * @author Administrator
@@ -52,4 +55,12 @@ public interface FileResourceService extends IService<FileResource> {
      * @return 是否删除成功
      */
     boolean deleteFileInfo(String fileKey);
+
+    WhiteResponse pageByBiz(Integer pageNum, Integer pageSize, String bizType, Long bizId);
+
+    WhiteResponse getTotalSize();
+
+    WhiteResponse createShare(Long sharedWithUserId, String sharePassword, String shareType, String expirationTime, List<Long> file_ids);
+
+    WhiteResponse getShare(String shareLink);
 }

@@ -2,11 +2,13 @@ package white.rs.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import white.rs.common.response.WhiteResponse;
@@ -82,10 +84,13 @@ public class ACCPurchaseContractController extends BaseController<AccessoriesPur
             @ApiParam(value = "Excel 文件", required = true)
             @RequestPart("file") MultipartFile file,
             @ApiParam(value = "导入的标识", required = true)
-            @RequestPart("importId") String importId
+            @RequestPart("importId") String importId,
+            @ApiParam(value = "客户id")
+            @RequestPart(required = false) String guestId
     ) {
-        return service.importExcel(file, importId);
+        return service.importExcel(file, Long.parseLong(importId), guestId != null ? Integer.parseInt(guestId) : null);
     }
+
 
     // 导出excel表格
     @PostMapping("/exportExcel")
@@ -96,5 +101,29 @@ public class ACCPurchaseContractController extends BaseController<AccessoriesPur
 
         service.exportExcel(body, response);
     }
+
+    // 重写分页查询
+    @GetMapping("/pageByGuestId")
+    @ApiOperation("分页查询")
+    public WhiteResponse page(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(required = false) Long guestId,
+            @RequestParam(required = false) Long importId
+    ) {
+        return service.getPageByUserRole(current, size, importId, guestId);
+    }
+
+    @GetMapping("/getAccListByImportId/{importId}")
+    @ApiOperation("分页查询")
+    public WhiteResponse pageByImportId(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @PathVariable Long importId
+    ) {
+        return service.getPageByUserRole(current, size, importId, null);
+    }
+
+
 
 }

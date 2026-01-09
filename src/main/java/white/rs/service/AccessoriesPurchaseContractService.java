@@ -22,7 +22,9 @@ public interface AccessoriesPurchaseContractService extends IService<Accessories
 
     WhiteResponse deleteFile(Long id);
 
-    WhiteResponse importExcel(MultipartFile file,String importId);
+    WhiteResponse importExcel(MultipartFile file,Long importId,Integer guestId);
     
     void exportExcel(Map<String, Object> body, HttpServletResponse response);
+
+    WhiteResponse getPageByUserRole(Long current, Long size,Long importId,Long guestId);
 }

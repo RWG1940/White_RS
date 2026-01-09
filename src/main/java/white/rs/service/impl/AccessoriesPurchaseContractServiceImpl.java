@@ -1,6 +1,7 @@
 package white.rs.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
@@ -20,10 +21,12 @@ import white.rs.common.response.ResponseCode;
 import white.rs.common.response.WhiteResponse;
 import white.rs.domain.AccessoriesPurchaseContract;
 import white.rs.domain.FileResource;
+import white.rs.domain.GuestTableImport;
 import white.rs.domain.TableImport;
 import white.rs.service.AccessoriesPurchaseContractService;
 import white.rs.mapper.AccessoriesPurchaseContractMapper;
 import org.springframework.stereotype.Service;
+import white.rs.service.GuestTableImportService;
 import white.rs.service.TableImportService;
 import white.rs.service.UsersService;
 
@@ -57,6 +60,9 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
 
     @Autowired
     private UsersService usersService;
+
+    @Autowired
+    private GuestTableImportService guestTableImportService;
 
     private static final Logger logger = LoggerFactory.getLogger(AccessoriesPurchaseContractServiceImpl.class);
 
@@ -180,10 +186,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
      * 获取当前用户的角色编码列表
      */
     private List<String> getCurrentUserRoles() {
-        System.out.println("检查权限");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("authentication" + authentication);
-
         if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String username = userDetails.getUsername();
@@ -272,7 +275,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
     }
 
     @Override
-    public WhiteResponse importExcel(MultipartFile file, String importId) {
+    public WhiteResponse importExcel(MultipartFile file, Long importId, Integer guestId) {
         try {
             List<AccessoriesPurchaseContract> list = new ArrayList<>();
 
@@ -602,13 +605,12 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
                 // 添加导入批次ID
-                contract.setImportId(Long.valueOf(importId));
+                contract.setImportId(importId);
                 list.add(contract);
             }
             // 将导入批次id写入数据库中，便于前端查看已有的批次
-            // 这里不应该声明对象，后续有待优化
             TableImport tableImport = new TableImport();
-            tableImport.setId(Long.valueOf(importId));
+            tableImport.setId(importId);
             if (tableImportService.getById(importId) == null) {
                 tableImportService.save(tableImport);
             }
@@ -776,7 +778,13 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     this.save(item);
                 }
             }
-
+            // 如果客人id存在，则添加关联关系
+            if (guestId != null) {
+                GuestTableImport guestTableImport = new GuestTableImport();
+                guestTableImport.setGuestId(guestId);
+                guestTableImport.setImportId(Math.toIntExact(importId));
+                this.guestTableImportService.addGuestTableImport(guestTableImport);
+            }
             return WhiteResponse.success("导入完成，共 " + list.size() + " 条（自动处理新增与更新）");
 
         } catch (Exception e) {
@@ -1073,6 +1081,69 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
         } catch (Exception e) {
             logger.error("导出 Excel 文件失败", e);
         }
+    }
+
+    @Override
+    public WhiteResponse getPageByUserRole(Long current, Long size,Long importId,Long guestId) {
+
+        // 获取当前用户角色
+        List<String> userRoles = getCurrentUserRoles();
+        
+        // 创建分页对象
+        Page<AccessoriesPurchaseContract> page = new Page<>(current, size);
+        
+        // 创建查询条件
+        QueryWrapper<AccessoriesPurchaseContract> queryWrapper = new QueryWrapper<>();
+        // 根据importId筛选数据
+        if (importId != null && importId > 0){
+            queryWrapper.eq("import_id", importId);
+        }else {
+            // 根据guestId筛选数据
+            if (guestId != null && guestId > 0) {
+                // 先从关联表中获取importIds
+                // 创建查询条件
+                QueryWrapper<GuestTableImport> guest_queryWrapper = new QueryWrapper<>();
+                guest_queryWrapper.eq("guest_id", guestId);
+                // 获取guestImports
+                List<GuestTableImport> guestImports = guestTableImportService.list(guest_queryWrapper);
+                // 从guestImports中获取importIds
+                List<Integer> importIds = guestImports.stream().map(GuestTableImport::getImportId).collect(java.util.stream.Collectors.toList());
+                queryWrapper.in(!importIds.isEmpty(), "import_id", importIds);
+                // 构建queryWrapper的importIds查询条件
+                queryWrapper.in(!importIds.isEmpty(), "import_id", importIds);
+            }
+        }
+
+        // 根据角色筛选数据
+        if (userRoles.contains("3294") || userRoles.contains("5293") || userRoles.contains("6666")) {
+            // 3294和5293角色可以查看所有数据
+            // 不添加额外的筛选条件
+        } else if (userRoles.contains("5555")) {
+            // 5555角色按用户名-对应表格跟单筛选
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+                String username = userDetails.getUsername();
+                queryWrapper.eq("follower", username);
+            }
+        } else if (userRoles.contains("7777")) {
+            // 6666角色按用户名-对应表格工厂筛选
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+                String username = userDetails.getUsername();
+                queryWrapper.eq("factory", username);
+            }
+        } else {
+            // 其他角色默认不返回数据或根据安全策略返回特定数据
+            // 这里可以根据实际业务需求进行调整
+            queryWrapper.eq("id", -1); // 不返回任何数据
+        }
+        
+        // 执行分页查询
+        Page<AccessoriesPurchaseContract> resultPage = this.page(page, queryWrapper);
+        // System.out.println(resultPage.getRecords());
+        return WhiteResponse.success(resultPage);
     }
 
     /**

@@ -10,8 +10,10 @@ import org.springframework.web.multipart.MultipartFile;
 import white.rs.common.response.WhiteResponse;
 import white.rs.controller.base.BaseController;
 import white.rs.domain.FileResource;
+import white.rs.domain.FileShareRequest;
 import white.rs.service.FileResourceService;
 import white.rs.service.MinioService;
+
 import java.util.List;
 
 @Api(tags = "文件管理")
@@ -21,6 +23,8 @@ public class FileController extends BaseController<FileResource, FileResourceSer
 
     @Autowired
     private MinioService minioService;
+    @Autowired
+    private FileResourceService fileResourceService;
 
     @ApiOperation("上传文件 with minio")
     @PostMapping("/upload")
@@ -52,4 +56,38 @@ public class FileController extends BaseController<FileResource, FileResourceSer
             @ApiParam(value = "文件", required = true) @RequestParam("file") MultipartFile file) {
         return minioService.updateFile(fileKey, file);
     }
+
+    @ApiOperation("按照条件获取分页数据")
+    @GetMapping("/pageByBiz")
+    public WhiteResponse pageByBiz(
+            @ApiParam(value = "页码", required = true) @RequestParam Integer pageNum,
+            @ApiParam(value = "每页数量", required = true) @RequestParam Integer pageSize,
+            @ApiParam(value = "业务类型") @RequestParam(required = false) String bizType,
+            @ApiParam(value = "业务ID") @RequestParam(required = false) Long bizId) {
+        return fileResourceService.pageByBiz(pageNum, pageSize, bizType, bizId);
+    }
+
+    @ApiOperation("获取所有文件大小总和")
+    @GetMapping("/getTotalSize")
+    public WhiteResponse getTotalSize() {
+        return fileResourceService.getTotalSize();
+    }
+
+    @ApiOperation("创建文件分享")
+    @PostMapping("/createShare")
+    public WhiteResponse createShare(
+            @RequestBody FileShareRequest request
+    ) {
+        return fileResourceService.createShare( request.getSharedWithUserId(), request.getSharePassword(), request.getShareType(), request.getExpirationTime(), request.getFileIds());
+    }
+
+    @ApiOperation("获取文件分享")
+    @GetMapping("/getShare/{shareLink}")
+    public WhiteResponse getShare(
+            @ApiParam(value = "分享链接", required = true)
+            @PathVariable String shareLink
+    ) {
+        return fileResourceService.getShare(shareLink);
+    }
+
 }

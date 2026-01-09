@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.GuestTableImportMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.GuestTableImport">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="guestId" column="guest_id" jdbcType="INTEGER"/>
+            <result property="importId" column="import_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,guest_id,import_id
+    </sql>
+</mapper>
