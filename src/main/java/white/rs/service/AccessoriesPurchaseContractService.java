@@ -27,4 +27,6 @@ public interface AccessoriesPurchaseContractService extends IService<Accessories
     void exportExcel(Map<String, Object> body, HttpServletResponse response);
 
     WhiteResponse getPageByUserRole(Long current, Long size,Long importId,Long guestId);
+
+    Object getTotalByImportId(Long importId);
 }

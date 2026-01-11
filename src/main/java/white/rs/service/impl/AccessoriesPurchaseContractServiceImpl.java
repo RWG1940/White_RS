@@ -279,6 +279,8 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
         try {
             List<AccessoriesPurchaseContract> list = new ArrayList<>();
 
+            List<String> userRoles = getCurrentUserRoles();
+
             Workbook workbook;
             String fileName = file.getOriginalFilename();
             if (fileName != null && fileName.endsWith(".xlsx")) {
@@ -309,7 +311,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 }
             }
 
-            // 仅处理允许的字段，忽略没有权限的字段
 
             // 提取图片信息（仅支持.xlsx格式）
             Map<String, String> imageMap = new HashMap<>();
@@ -325,109 +326,172 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                 if (row == null) continue;
 
                 AccessoriesPurchaseContract contract = new AccessoriesPurchaseContract();
-
                 // 根据表头映射填充数据
-                if (fieldMap.containsKey("图片")) {
-                    Cell cell = row.getCell(fieldMap.get("图片"));
-                    if (cell != null) {
-                        String cellRef = cell.getRowIndex() + "," + cell.getColumnIndex();
-                        // 如果该单元格有图片，则上传到MinIO并获取URL
-                        if (imageMap.containsKey(cellRef)) {
-                            String imageUrl = imageMap.get(cellRef);
-                            contract.setImageUrl(imageUrl);
-                        } else {
-                            contract.setImageUrl(getCellValueAsString(cell));
+                if (userRoles.contains("3294") || userRoles.contains("5293")) {
+                    if (fieldMap.containsKey("图片")) {
+                        Cell cell = row.getCell(fieldMap.get("图片"));
+                        if (cell != null) {
+                            String cellRef = cell.getRowIndex() + "," + cell.getColumnIndex();
+                            // 如果该单元格有图片，则上传到MinIO并获取URL
+                            if (imageMap.containsKey(cellRef)) {
+                                String imageUrl = imageMap.get(cellRef);
+                                contract.setImageUrl(imageUrl);
+                            } else {
+                                contract.setImageUrl(getCellValueAsString(cell));
+                            }
+                        }
+                    }
+
+
+
+                    if (fieldMap.containsKey("品牌")) {
+                        Cell cell = row.getCell(fieldMap.get("品牌"));
+                        if (cell != null) {
+                            contract.setBrand(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("英文品名")) {
+                        Cell cell = row.getCell(fieldMap.get("英文品名"));
+                        if (cell != null) {
+                            contract.setNameEn(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("大面材料")) {
+                        Cell cell = row.getCell(fieldMap.get("大面材料"));
+                        if (cell != null) {
+                            contract.setMaterialMain(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("里衬材质")) {
+                        Cell cell = row.getCell(fieldMap.get("里衬材质"));
+                        if (cell != null) {
+                            contract.setMaterialLining(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("洗标颜色")) {
+                        Cell cell = row.getCell(fieldMap.get("洗标颜色"));
+                        if (cell != null) {
+                            contract.setWashLabelColor(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("洗标种类")) {
+                        Cell cell = row.getCell(fieldMap.get("洗标种类"));
+                        if (cell != null) {
+                            contract.setWashLabelType(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("工厂")) {
+                        Cell cell = row.getCell(fieldMap.get("工厂"));
+                        if (cell != null) {
+                            contract.setFactory(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("地址")) {
+                        Cell cell = row.getCell(fieldMap.get("地址"));
+                        if (cell != null) {
+                            contract.setAddress(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("跟单")) {
+                        Cell cell = row.getCell(fieldMap.get("跟单"));
+                        if (cell != null) {
+                            contract.setFollower(getCellValueAsString(cell));
+                        }
+                    }
+
+                    if (fieldMap.containsKey("数量")) {
+                        Cell cell = row.getCell(fieldMap.get("数量"));
+                        if (cell != null) {
+                            try {
+                                contract.setQuantity((int) cell.getNumericCellValue());
+                            } catch (IllegalStateException e) {
+                                contract.setQuantity(Integer.valueOf(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("洗标总价")) {
+                        Cell cell = row.getCell(fieldMap.get("洗标总价"));
+                        if (cell != null) {
+                            try {
+                                contract.setWashTotalPrice(BigDecimal.valueOf(cell.getNumericCellValue()));
+                            } catch (IllegalStateException e) {
+                                contract.setWashTotalPrice(new BigDecimal(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("吊牌总价")) {
+                        Cell cell = row.getCell(fieldMap.get("吊牌总价"));
+                        if (cell != null) {
+                            try {
+                                contract.setTagTotalPrice(BigDecimal.valueOf(cell.getNumericCellValue()));
+                            } catch (IllegalStateException e) {
+                                contract.setTagTotalPrice(new BigDecimal(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("洗标优先级")) {
+                        Cell cell = row.getCell(fieldMap.get("洗标优先级"));
+                        if (cell != null) {
+                            try {
+                                contract.setWashPriority((int) cell.getNumericCellValue());
+                            } catch (IllegalStateException e) {
+                                contract.setWashPriority(Integer.valueOf(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("洗标确认时间")) {
+                        Cell cell = row.getCell(fieldMap.get("洗标确认时间"));
+                        if (cell != null) {
+                            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                                contract.setWashConfirmTime(cell.getDateCellValue());
+                            } else {
+                                contract.setWashConfirmTime(parseDateFromString(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("吊牌优先级")) {
+                        Cell cell = row.getCell(fieldMap.get("吊牌优先级"));
+                        if (cell != null) {
+                            try {
+                                contract.setTagPriority((int) cell.getNumericCellValue());
+                            } catch (IllegalStateException e) {
+                                contract.setTagPriority(Integer.valueOf(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("吊牌确认时间")) {
+                        Cell cell = row.getCell(fieldMap.get("吊牌确认时间"));
+                        if (cell != null) {
+                            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                                contract.setTagConfirmTime(cell.getDateCellValue());
+                            } else {
+                                contract.setTagConfirmTime(parseDateFromString(getCellValueAsString(cell)));
+                            }
+                        }
+                    }
+
+                    if (fieldMap.containsKey("季度")) {
+                        Cell cell = row.getCell(fieldMap.get("季度"));
+                        if (cell != null) {
+                            contract.setQuarter(getCellValueAsString(cell));
                         }
                     }
                 }
 
-                if (fieldMap.containsKey("货号")) {
-                    Cell cell = row.getCell(fieldMap.get("货号"));
-                    if (cell != null) {
-                        contract.setSku(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("颜色")) {
-                    Cell cell = row.getCell(fieldMap.get("颜色"));
-                    if (cell != null) {
-                        contract.setColor(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("品牌")) {
-                    Cell cell = row.getCell(fieldMap.get("品牌"));
-                    if (cell != null) {
-                        contract.setBrand(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("英文品名")) {
-                    Cell cell = row.getCell(fieldMap.get("英文品名"));
-                    if (cell != null) {
-                        contract.setNameEn(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("大面材料")) {
-                    Cell cell = row.getCell(fieldMap.get("大面材料"));
-                    if (cell != null) {
-                        contract.setMaterialMain(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("里衬材质")) {
-                    Cell cell = row.getCell(fieldMap.get("里衬材质"));
-                    if (cell != null) {
-                        contract.setMaterialLining(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("洗标颜色")) {
-                    Cell cell = row.getCell(fieldMap.get("洗标颜色"));
-                    if (cell != null) {
-                        contract.setWashLabelColor(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("洗标种类")) {
-                    Cell cell = row.getCell(fieldMap.get("洗标种类"));
-                    if (cell != null) {
-                        contract.setWashLabelType(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("工厂")) {
-                    Cell cell = row.getCell(fieldMap.get("工厂"));
-                    if (cell != null) {
-                        contract.setFactory(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("地址")) {
-                    Cell cell = row.getCell(fieldMap.get("地址"));
-                    if (cell != null) {
-                        contract.setAddress(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("跟单")) {
-                    Cell cell = row.getCell(fieldMap.get("跟单"));
-                    if (cell != null) {
-                        contract.setFollower(getCellValueAsString(cell));
-                    }
-                }
-
-                if (fieldMap.containsKey("数量")) {
-                    Cell cell = row.getCell(fieldMap.get("数量"));
-                    if (cell != null) {
-                        try {
-                            contract.setQuantity((int) cell.getNumericCellValue());
-                        } catch (IllegalStateException e) {
-                            contract.setQuantity(Integer.valueOf(getCellValueAsString(cell)));
-                        }
-                    }
-                }
 
                 if (fieldMap.containsKey("洗标单价")) {
                     Cell cell = row.getCell(fieldMap.get("洗标单价"));
@@ -440,16 +504,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
-                if (fieldMap.containsKey("洗标总价")) {
-                    Cell cell = row.getCell(fieldMap.get("洗标总价"));
-                    if (cell != null) {
-                        try {
-                            contract.setWashTotalPrice(BigDecimal.valueOf(cell.getNumericCellValue()));
-                        } catch (IllegalStateException e) {
-                            contract.setWashTotalPrice(new BigDecimal(getCellValueAsString(cell)));
-                        }
-                    }
-                }
 
                 if (fieldMap.containsKey("吊牌单价")) {
                     Cell cell = row.getCell(fieldMap.get("吊牌单价"));
@@ -462,27 +516,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
-                if (fieldMap.containsKey("吊牌总价")) {
-                    Cell cell = row.getCell(fieldMap.get("吊牌总价"));
-                    if (cell != null) {
-                        try {
-                            contract.setTagTotalPrice(BigDecimal.valueOf(cell.getNumericCellValue()));
-                        } catch (IllegalStateException e) {
-                            contract.setTagTotalPrice(new BigDecimal(getCellValueAsString(cell)));
-                        }
-                    }
-                }
-
-                if (fieldMap.containsKey("洗标优先级")) {
-                    Cell cell = row.getCell(fieldMap.get("洗标优先级"));
-                    if (cell != null) {
-                        try {
-                            contract.setWashPriority((int) cell.getNumericCellValue());
-                        } catch (IllegalStateException e) {
-                            contract.setWashPriority(Integer.valueOf(getCellValueAsString(cell)));
-                        }
-                    }
-                }
 
                 if (fieldMap.containsKey("洗标状态")) {
                     Cell cell = row.getCell(fieldMap.get("洗标状态"));
@@ -492,16 +525,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
-                if (fieldMap.containsKey("洗标确认时间")) {
-                    Cell cell = row.getCell(fieldMap.get("洗标确认时间"));
-                    if (cell != null) {
-                        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                            contract.setWashConfirmTime(cell.getDateCellValue());
-                        } else {
-                            contract.setWashConfirmTime(parseDateFromString(getCellValueAsString(cell)));
-                        }
-                    }
-                }
 
                 if (fieldMap.containsKey("洗标实际出货数量")) {
                     Cell cell = row.getCell(fieldMap.get("洗标实际出货数量"));
@@ -532,16 +555,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
-                if (fieldMap.containsKey("吊牌优先级")) {
-                    Cell cell = row.getCell(fieldMap.get("吊牌优先级"));
-                    if (cell != null) {
-                        try {
-                            contract.setTagPriority((int) cell.getNumericCellValue());
-                        } catch (IllegalStateException e) {
-                            contract.setTagPriority(Integer.valueOf(getCellValueAsString(cell)));
-                        }
-                    }
-                }
 
                 if (fieldMap.containsKey("吊牌状态")) {
                     Cell cell = row.getCell(fieldMap.get("吊牌状态"));
@@ -551,16 +564,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
-                if (fieldMap.containsKey("吊牌确认时间")) {
-                    Cell cell = row.getCell(fieldMap.get("吊牌确认时间"));
-                    if (cell != null) {
-                        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                            contract.setTagConfirmTime(cell.getDateCellValue());
-                        } else {
-                            contract.setTagConfirmTime(parseDateFromString(getCellValueAsString(cell)));
-                        }
-                    }
-                }
 
                 if (fieldMap.containsKey("吊牌出货时间")) {
                     Cell cell = row.getCell(fieldMap.get("吊牌出货时间"));
@@ -584,6 +587,20 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
+                if (fieldMap.containsKey("货号")) {
+                    Cell cell = row.getCell(fieldMap.get("货号"));
+                    if (cell != null) {
+                        contract.setSku(getCellValueAsString(cell));
+                    }
+                }
+
+                if (fieldMap.containsKey("颜色")) {
+                    Cell cell = row.getCell(fieldMap.get("颜色"));
+                    if (cell != null) {
+                        contract.setColor(getCellValueAsString(cell));
+                    }
+                }
+
                 if (fieldMap.containsKey("吊牌快递单号")) {
                     Cell cell = row.getCell(fieldMap.get("吊牌快递单号"));
                     if (cell != null) {
@@ -591,12 +608,6 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
-                if (fieldMap.containsKey("季度")) {
-                    Cell cell = row.getCell(fieldMap.get("季度"));
-                    if (cell != null) {
-                        contract.setQuarter(getCellValueAsString(cell));
-                    }
-                }
 
                 if (fieldMap.containsKey("备注")) {
                     Cell cell = row.getCell(fieldMap.get("备注"));
@@ -604,6 +615,8 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         contract.setRemark(getCellValueAsString(cell));
                     }
                 }
+
+
                 // 添加导入批次ID
                 contract.setImportId(importId);
                 list.add(contract);
@@ -1084,20 +1097,20 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
     }
 
     @Override
-    public WhiteResponse getPageByUserRole(Long current, Long size,Long importId,Long guestId) {
+    public WhiteResponse getPageByUserRole(Long current, Long size, Long importId, Long guestId) {
 
         // 获取当前用户角色
         List<String> userRoles = getCurrentUserRoles();
-        
+
         // 创建分页对象
         Page<AccessoriesPurchaseContract> page = new Page<>(current, size);
-        
+
         // 创建查询条件
         QueryWrapper<AccessoriesPurchaseContract> queryWrapper = new QueryWrapper<>();
         // 根据importId筛选数据
-        if (importId != null && importId > 0){
+        if (importId != null && importId > 0) {
             queryWrapper.eq("import_id", importId);
-        }else {
+        } else {
             // 根据guestId筛选数据
             if (guestId != null && guestId > 0) {
                 // 先从关联表中获取importIds
@@ -1139,12 +1152,37 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
             // 这里可以根据实际业务需求进行调整
             queryWrapper.eq("id", -1); // 不返回任何数据
         }
-        
+
         // 执行分页查询
         Page<AccessoriesPurchaseContract> resultPage = this.page(page, queryWrapper);
         // System.out.println(resultPage.getRecords());
         return WhiteResponse.success(resultPage);
     }
+
+    @Override
+    public WhiteResponse getTotalByImportId(Long importId) {
+        QueryWrapper<AccessoriesPurchaseContract> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("import_id", importId);
+
+        // 查出所有id符合的数据
+        List<AccessoriesPurchaseContract> contracts = this.list(queryWrapper);
+
+        // 使用流操作，确保 null 值被处理为 BigDecimal.ZERO
+        BigDecimal washTotalPrice = contracts.stream()
+                .map(contract -> Optional.ofNullable(contract.getWashTotalPrice()).orElse(BigDecimal.ZERO)) // 如果为 null，替换为 BigDecimal.ZERO
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal tagTotalPrice = contracts.stream()
+                .map(contract -> Optional.ofNullable(contract.getTagTotalPrice()).orElse(BigDecimal.ZERO)) // 如果为 null，替换为 BigDecimal.ZERO
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 返回计算结果
+        return WhiteResponse.success(new HashMap<String, BigDecimal>() {{
+            put("washTotalPrice", washTotalPrice);
+            put("tagTotalPrice", tagTotalPrice);
+        }});
+    }
+
 
     /**
      * 从Excel工作表中提取图片信息

@@ -124,6 +124,21 @@ public class ACCPurchaseContractController extends BaseController<AccessoriesPur
         return service.getPageByUserRole(current, size, importId, null);
     }
 
+    @DeleteMapping ("/deleteByImportId/{importId}")
+    @ApiOperation("删除by importId")
+    public WhiteResponse deleteByImportId(
+            @PathVariable Long importId
+    ) {
+        return service.removeBatchByIds(service.list(new QueryWrapper<AccessoriesPurchaseContract>().eq("import_id", importId)), true)? WhiteResponse.success() : WhiteResponse.fail();
+    }
 
+
+    @GetMapping("/getTotalByImportId/{importId}")
+    @ApiOperation("获取总记录金额数by importId")
+    public WhiteResponse getTotalByImportId(
+            @PathVariable Long importId
+    ) {
+        return service.getTotalByImportId(importId);
+    }
 
 }
