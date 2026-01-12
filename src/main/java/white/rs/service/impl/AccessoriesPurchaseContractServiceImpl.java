@@ -451,16 +451,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         }
                     }
 
-                    if (fieldMap.containsKey("洗标确认时间")) {
-                        Cell cell = row.getCell(fieldMap.get("洗标确认时间"));
-                        if (cell != null) {
-                            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                                contract.setWashConfirmTime(cell.getDateCellValue());
-                            } else {
-                                contract.setWashConfirmTime(parseDateFromString(getCellValueAsString(cell)));
-                            }
-                        }
-                    }
+
 
                     if (fieldMap.containsKey("吊牌优先级")) {
                         Cell cell = row.getCell(fieldMap.get("吊牌优先级"));
@@ -473,16 +464,7 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                         }
                     }
 
-                    if (fieldMap.containsKey("吊牌确认时间")) {
-                        Cell cell = row.getCell(fieldMap.get("吊牌确认时间"));
-                        if (cell != null) {
-                            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                                contract.setTagConfirmTime(cell.getDateCellValue());
-                            } else {
-                                contract.setTagConfirmTime(parseDateFromString(getCellValueAsString(cell)));
-                            }
-                        }
-                    }
+
 
                     if (fieldMap.containsKey("季度")) {
                         Cell cell = row.getCell(fieldMap.get("季度"));
@@ -492,6 +474,27 @@ public class AccessoriesPurchaseContractServiceImpl extends ServiceImpl<Accessor
                     }
                 }
 
+                if (fieldMap.containsKey("洗标确认时间")) {
+                    Cell cell = row.getCell(fieldMap.get("洗标确认时间"));
+                    if (cell != null) {
+                        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                            contract.setWashConfirmTime(cell.getDateCellValue());
+                        } else {
+                            contract.setWashConfirmTime(parseDateFromString(getCellValueAsString(cell)));
+                        }
+                    }
+                }
+
+                if (fieldMap.containsKey("吊牌确认时间")) {
+                    Cell cell = row.getCell(fieldMap.get("吊牌确认时间"));
+                    if (cell != null) {
+                        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                            contract.setTagConfirmTime(cell.getDateCellValue());
+                        } else {
+                            contract.setTagConfirmTime(parseDateFromString(getCellValueAsString(cell)));
+                        }
+                    }
+                }
 
                 if (fieldMap.containsKey("洗标单价")) {
                     Cell cell = row.getCell(fieldMap.get("洗标单价"));
