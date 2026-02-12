@@ -415,6 +415,32 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
 
     }
 
+    @Override
+    public WhiteResponse register(Map<String, String> req)    {
+        String username = req.get("username");
+        // 判断用户名是否已存在
+        if (getByUsername(username) != null) {
+            return WhiteResponse.fail("用户名已存在");
+        }
+        String password = req.get("password");
+        String email = req.get("email");
+        String phone = req.get("phone");
+        Users user = new Users();
+        user.setUsername(username);
+        user.setPasswordHash(PasswordUtil.encode(password));
+        user.setEmail(email);
+        user.setPhone(phone);
+        return super
+                .save(user)
+                ? WhiteResponse.success("注册成功")
+                : WhiteResponse.fail("注册失败");
+    }
+
+    @Override
+    public WhiteResponse<String> getUsernameById(Long id) {
+        return WhiteResponse.success(super.getById(id).getUsername());
+    }
+
     /**
      * 获取客户端IP地址
      */

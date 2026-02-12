@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.UserAiPlanMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.UserAiPlan">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="uId" column="u_id" jdbcType="INTEGER"/>
+            <result property="pId" column="p_id" jdbcType="INTEGER"/>
+            <result property="sTime" column="s_time" jdbcType="TIMESTAMP"/>
+            <result property="eTime" column="e_time" jdbcType="TIMESTAMP"/>
+            <result property="status" column="status" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,u_id,p_id,
+        s_time,e_time,status
+    </sql>
+</mapper>

@@ -12,5 +12,10 @@ import white.rs.service.RolesService;
 @RequestMapping("/role")
 @Api(tags = "角色管理")
 public class RoleController extends BaseController<Roles, RolesService> {
+    protected final RolesService service;
+    protected RoleController(RolesService service) {
+        super(service);
+        this.service = service;
+    }
 }
 

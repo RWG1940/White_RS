@@ -1,3 +1,7 @@
+# 服务器端口配置
+server:
+  port: 8777
+
 spring:
   # mysql数据库
   datasource:
@@ -42,3 +46,10 @@ minio:
   accessKey: minioadmin
   secretKey: minioadmin
   bucket: white-rs
+
+# 通义千问配置
+qwen:
+  api-key: sk-9b7e852591e64fb882eba439dd17878c
+  base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  image-max-size: 1
+  image-default-size: 1024*1024

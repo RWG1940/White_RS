@@ -1,7 +1,10 @@
+server:
+  port: 8777
+
 spring:
   profiles:
     # 开发环境dev 生产环境prod
-    active: prod
+    active: dev
   servlet:
     multipart:
       max-file-size: 999MB

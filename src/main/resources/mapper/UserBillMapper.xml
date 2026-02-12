@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="white.rs.mapper.UserBillMapper">
+
+    <resultMap id="BaseResultMap" type="white.rs.domain.UserBill">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="uId" column="u_id" jdbcType="INTEGER"/>
+            <result property="type" column="type" jdbcType="VARCHAR"/>
+            <result property="date" column="date" jdbcType="TIMESTAMP"/>
+            <result property="orderNum" column="order_num" jdbcType="VARCHAR"/>
+            <result property="result" column="result" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="INTEGER"/>
+            <result property="paid" column="paid" jdbcType="DECIMAL"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,u_id,type,
+        date,order_num,result,
+        status,paid
+    </sql>
+</mapper>

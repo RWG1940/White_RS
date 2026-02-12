@@ -17,8 +17,11 @@ import white.rs.common.response.WhiteResponse;
 @Api(tags = "webhook与批次表的关联管理")
 public class WebhookTableImportController extends BaseController<WebhookTableImport, WebhookTableImportService> {
 
-    @Autowired
-    private WebhookTableImportService webhookTableImportService;
+    protected final WebhookTableImportService service;
+    protected WebhookTableImportController(WebhookTableImportService service) {
+        super(service);
+        this.service = service;
+    }
 
     /**
      * 批量通知,根据该条数据的tableImportId去获取对应的webhook id,在后端实现批量通知功能
@@ -26,6 +29,6 @@ public class WebhookTableImportController extends BaseController<WebhookTableImp
     @GetMapping("/notice-group/{tableImportId}/{sku}")
     @ApiOperation("批量通知")
     public WhiteResponse noticeGroup(@PathVariable String tableImportId, @PathVariable String sku) {
-        return webhookTableImportService.noticeGroup(tableImportId, sku);
+        return service.noticeGroup(tableImportId, sku);
     }
 }

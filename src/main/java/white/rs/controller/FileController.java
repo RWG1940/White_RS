@@ -23,8 +23,11 @@ public class FileController extends BaseController<FileResource, FileResourceSer
 
     @Autowired
     private MinioService minioService;
-    @Autowired
-    private FileResourceService fileResourceService;
+    protected final FileResourceService service;
+    protected FileController(FileResourceService service) {
+        super(service);
+        this.service = service;
+    }
 
     @ApiOperation("上传文件 with minio")
     @PostMapping("/upload")
@@ -64,13 +67,13 @@ public class FileController extends BaseController<FileResource, FileResourceSer
             @ApiParam(value = "每页数量", required = true) @RequestParam Integer pageSize,
             @ApiParam(value = "业务类型") @RequestParam(required = false) String bizType,
             @ApiParam(value = "业务ID") @RequestParam(required = false) Long bizId) {
-        return fileResourceService.pageByBiz(pageNum, pageSize, bizType, bizId);
+        return service.pageByBiz(pageNum, pageSize, bizType, bizId);
     }
 
     @ApiOperation("获取所有文件大小总和")
     @GetMapping("/getTotalSize")
     public WhiteResponse getTotalSize() {
-        return fileResourceService.getTotalSize();
+        return service.getTotalSize();
     }
 
     @ApiOperation("创建文件分享")
@@ -78,7 +81,7 @@ public class FileController extends BaseController<FileResource, FileResourceSer
     public WhiteResponse createShare(
             @RequestBody FileShareRequest request
     ) {
-        return fileResourceService.createShare( request.getSharedWithUserId(), request.getSharePassword(), request.getShareType(), request.getExpirationTime(), request.getFileIds());
+        return service.createShare( request.getSharedWithUserId(), request.getSharePassword(), request.getShareType(), request.getExpirationTime(), request.getFileIds());
     }
 
     @ApiOperation("获取文件分享")
@@ -87,7 +90,7 @@ public class FileController extends BaseController<FileResource, FileResourceSer
             @ApiParam(value = "分享链接", required = true)
             @PathVariable String shareLink
     ) {
-        return fileResourceService.getShare(shareLink);
+        return service.getShare(shareLink);
     }
 
 }

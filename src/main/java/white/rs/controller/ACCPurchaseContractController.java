@@ -2,20 +2,16 @@ package white.rs.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import white.rs.common.response.WhiteResponse;
 import white.rs.controller.base.BaseController;
 import white.rs.domain.AccessoriesPurchaseContract;
 import white.rs.service.AccessoriesPurchaseContractService;
-import white.rs.service.impl.AccessoriesPurchaseContractServiceImpl;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
@@ -26,8 +22,12 @@ import java.util.Map;
 @Api(tags = "辅料购货合同管理")
 public class ACCPurchaseContractController extends BaseController<AccessoriesPurchaseContract, AccessoriesPurchaseContractService> {
 
-    @Autowired
-    private AccessoriesPurchaseContractServiceImpl service;
+    protected final AccessoriesPurchaseContractService service;
+
+    protected ACCPurchaseContractController(AccessoriesPurchaseContractService service) {
+        super(service);
+        this.service = service;
+    }
 
     @Override
     @PostMapping
@@ -102,7 +102,6 @@ public class ACCPurchaseContractController extends BaseController<AccessoriesPur
         service.exportExcel(body, response);
     }
 
-    // 重写分页查询
     @GetMapping("/pageByGuestId")
     @ApiOperation("分页查询")
     public WhiteResponse page(
@@ -138,7 +137,7 @@ public class ACCPurchaseContractController extends BaseController<AccessoriesPur
     public WhiteResponse getTotalByImportId(
             @PathVariable Long importId
     ) {
-        return service.getTotalByImportId(importId);
+        return WhiteResponse.success(service.getTotalByImportId(importId));
     }
 
 }

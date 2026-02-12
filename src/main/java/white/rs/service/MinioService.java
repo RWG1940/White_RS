@@ -66,4 +66,6 @@ public interface MinioService {
     void deleteFileFromMinio(String fileName) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException;
 
     String updateFileInMinio(String fileName, MultipartFile file, FileResource fileResource) throws IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException;
+
+    String uploadBytes(byte[] imageBytes, FileResource fileResource);
 }

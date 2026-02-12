@@ -169,4 +169,8 @@ public interface UsersService extends IService<Users> {
     WhiteResponse<Map<String, Object>> getCurrentUser();
 
     WhiteResponse changePassword(Map<String, String> req);
+
+    WhiteResponse register(Map<String, String> req);
+
+    WhiteResponse<String> getUsernameById(Long id);
 }

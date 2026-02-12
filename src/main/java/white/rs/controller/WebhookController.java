@@ -12,4 +12,9 @@ import white.rs.service.WebhookService;
 @RequestMapping("/webhook")
 @Api(tags = "webhook管理、响应")
 public class WebhookController extends BaseController<Webhook, WebhookService> {
+    protected final WebhookService service;
+    protected WebhookController(WebhookService service) {
+        super(service);
+        this.service = service;
+    }
 }

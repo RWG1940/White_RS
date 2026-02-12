@@ -96,5 +96,25 @@ public class LoginController {
         return usersService.changePassword(req);
     }
 
+    /**
+     * 注册
+     */
+    @PostMapping("/register")
+    @ApiOperation("注册")
+    public WhiteResponse register(
+            @RequestBody Map<String, String> req
+    ) {
+        return usersService.register(req);
+    }
+
+    /**
+     * 根据id获取用户名
+     */
+    @GetMapping("/get-username-by-id/{id}")
+    @ApiOperation("根据id获取用户名")
+    public WhiteResponse<String> getUsernameById(@PathVariable Long id) {
+        return usersService.getUsernameById(id);
+    }
+
 }
 

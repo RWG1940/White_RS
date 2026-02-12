@@ -2,7 +2,6 @@ package white.rs.controller;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,13 +16,16 @@ import white.rs.service.GuestTableImportService;
 @Api(tags = "guest与批次表的关联管理")
 public class GuestTableImportController extends BaseController<GuestTableImport, GuestTableImportService> {
 
-    @Autowired
-    private GuestTableImportService guestTableImportService;
+    protected final GuestTableImportService service;
+    protected GuestTableImportController(GuestTableImportService service) {
+        super(service);
+        this.service = service;
+    }
 
     @Override
     @PostMapping
     @ApiOperation("新增")
     public WhiteResponse<GuestTableImport> save(@RequestBody GuestTableImport entity) {
-        return guestTableImportService.addGuestTableImport(entity);
+        return service.addGuestTableImport(entity);
     }
 }

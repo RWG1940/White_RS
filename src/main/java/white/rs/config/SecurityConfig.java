@@ -67,11 +67,14 @@ public class SecurityConfig {
                 // 允许访问的路径（无需认证）
                 .antMatchers(
                         "/api/auth",
+                        "/ai-sys-prompts",
                         "/api/auth/**",
                         "/ws/**",  // WebSocket 连接路径（由 WebSocketAuthInterceptor 处理认证）
                         "/error",
                         "/api/files/**",  // 文件上传下载接口
                         "/acc/importExcel",
+                        "/qwen/**",
+                        "/ai-plans/**",
                         "/favicon.ico"
                 ).permitAll();
                 

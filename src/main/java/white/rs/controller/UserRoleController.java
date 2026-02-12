@@ -12,4 +12,9 @@ import white.rs.service.UserRoleService;
 @RequestMapping("/user-role")
 @Api(tags = "用户角色管理")
 public class UserRoleController extends BaseController<UserRole, UserRoleService> {
+    protected final UserRoleService service;
+    protected UserRoleController(UserRoleService service) {
+        super(service);
+        this.service = service;
+    }
 }

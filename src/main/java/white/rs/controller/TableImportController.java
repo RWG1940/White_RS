@@ -16,5 +16,10 @@ import white.rs.service.TableImportService;
 @RequestMapping("/tableImport")
 @Api(tags = "导入批次管理")
 public class TableImportController extends BaseController<TableImport, TableImportService> {
+    protected final TableImportService service;
+    protected TableImportController(TableImportService service) {
+        super(service);
+        this.service = service;
+    }
 
 }

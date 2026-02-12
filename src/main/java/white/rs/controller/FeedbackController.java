@@ -11,5 +11,10 @@ import white.rs.service.FeedbackService;
 @RequestMapping("/feedback")
 @Api(tags = "guest与批次表的关联管理")
 public class FeedbackController extends BaseController<Feedback, FeedbackService> {
+    protected final FeedbackService service;
+    protected FeedbackController(FeedbackService service) {
+        super(service);
+        this.service = service;
+    }
 
 }

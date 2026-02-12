@@ -17,10 +17,7 @@ import white.rs.service.FileResourceService;
 import white.rs.service.MinioService;
 
 import javax.annotation.PostConstruct;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -298,6 +295,24 @@ public class MinioServiceImpl implements MinioService {
 
         return fileName;
     }
+
+    @Override
+    public String uploadBytes(byte[] data, FileResource fileResource) {
+        try (InputStream is = new ByteArrayInputStream(data)) {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileResource.getFileKey())
+                            .stream(is, data.length, -1)
+                            .contentType(fileResource.getFileType())
+                            .build()
+            );
+            return fileResource.getFileKey();
+        } catch (Exception e) {
+            throw new RuntimeException("MinIO 上传失败", e);
+        }
+    }
+
 
 
 }
